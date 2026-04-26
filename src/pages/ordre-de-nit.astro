@@ -1,0 +1,296 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { ca } from '../i18n/ca';
+import charactersRaw from '../data/characters.json';
+
+type Character = {
+  id: string;
+  name: string;
+  edition: string;
+  team: string;
+  firstNight: number;
+  firstNightReminder: string;
+  otherNight: number;
+  otherNightReminder: string;
+  reminders: string[];
+  setup: boolean;
+  ability: string;
+  image: string;
+};
+
+const characters = charactersRaw as Character[];
+const charactersJson = JSON.stringify(characters);
+const POCKETGRIMOIRE_CDN = 'https://www.pocketgrimoire.co.uk';
+---
+
+<Layout title={ca.night.title} activePage="nightOrder">
+  <div class="night-page container">
+    <div class="page-header">
+      <h1 class="page-title">{ca.night.title}</h1>
+      <p class="page-subtitle">Personatges actius en cada fase de la nit</p>
+    </div>
+
+    <div id="no-chars" class="empty-state" style="display:none">
+      <div class="empty-state-icon">🌙</div>
+      <p>No hi ha personatges actius.</p>
+      <p style="font-size:0.85rem;margin-top:0.25rem">Torna a la configuració per seleccionar personatges.</p>
+      <a href="/" class="btn btn-primary" style="margin-top:1.5rem;text-decoration:none">
+        Anar a Configuració
+      </a>
+    </div>
+
+    <div id="night-columns" class="night-columns">
+      <!-- First night -->
+      <div class="night-column">
+        <div class="night-col-header">
+          <h2 class="night-col-title">
+            <span class="night-moon">🌑</span>
+            {ca.night.firstNight}
+          </h2>
+        </div>
+        <div id="first-night-list" class="night-list">
+          <!-- Minion info (always first) -->
+          <div class="night-row system-row">
+            <div class="night-row-num">—</div>
+            <div class="night-row-content">
+              <div class="night-row-name system-label">SERVENTS</div>
+              <div class="night-row-reminder">El Narrador desperta els Servents i els mostra els altres Servents i qui és el Dimoni.</div>
+            </div>
+          </div>
+          <!-- Demon info -->
+          <div class="night-row system-row">
+            <div class="night-row-num">—</div>
+            <div class="night-row-content">
+              <div class="night-row-name system-label">DIMONI</div>
+              <div class="night-row-reminder">El Narrador desperta el Dimoni i li mostra els seus Servents i 3 personatges que no estan en joc.</div>
+            </div>
+          </div>
+          <!-- Characters injected by JS -->
+        </div>
+      </div>
+
+      <!-- Other nights -->
+      <div class="night-column">
+        <div class="night-col-header">
+          <h2 class="night-col-title">
+            <span class="night-moon">🌕</span>
+            {ca.night.otherNights}
+          </h2>
+        </div>
+        <div id="other-night-list" class="night-list">
+          <!-- Dusk reminder -->
+          <div class="night-row system-row">
+            <div class="night-row-num">—</div>
+            <div class="night-row-content">
+              <div class="night-row-name system-label">CREPUSCLE</div>
+              <div class="night-row-reminder">Preparació: recordatoris, Viatgers i Fabulosos.</div>
+            </div>
+          </div>
+          <!-- Characters injected by JS -->
+          <!-- Dawn reminder -->
+          <div id="dawn-row" class="night-row system-row" style="display:none">
+            <div class="night-row-num">—</div>
+            <div class="night-row-content">
+              <div class="night-row-name system-label">ALBA</div>
+              <div class="night-row-reminder">Tothom s'aixeca. Algu pot morir.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script define:vars={{ charactersJson, POCKETGRIMOIRE_CDN }}>
+  const ALL_CHARS = JSON.parse(charactersJson);
+  const CDN = POCKETGRIMOIRE_CDN;
+
+  function imgUrl(id) {
+    return `${CDN}/build/img/roles/${id}_g.webp`;
+  }
+
+  function loadActiveChars() {
+    try {
+      const setup = JSON.parse(localStorage.getItem('botc_setup') || '{}');
+      const game  = JSON.parse(localStorage.getItem('botc_game')  || '{}');
+
+      // Chars from setup selection
+      const setupChars = setup.chars || [];
+      // Chars currently in game
+      const gamePlayers = game.players || [];
+      const gameCharIds = gamePlayers.map(p => p.charId).filter(Boolean);
+
+      // Prefer game chars if available, else setup chars
+      const activeIds = gameCharIds.length > 0 ? gameCharIds : setupChars;
+      return ALL_CHARS.filter(c => activeIds.includes(c.id));
+    } catch(_) {
+      return [];
+    }
+  }
+
+  function render() {
+    const chars = loadActiveChars();
+
+    if (chars.length === 0) {
+      document.getElementById('no-chars').style.display = '';
+      document.getElementById('night-columns').style.display = 'none';
+      return;
+    }
+
+    document.getElementById('no-chars').style.display = 'none';
+    document.getElementById('night-columns').style.display = '';
+
+    // First night
+    const firstNight = chars
+      .filter(c => c.firstNight > 0)
+      .sort((a, b) => a.firstNight - b.firstNight);
+
+    const firstList = document.getElementById('first-night-list');
+    // Append after the system rows
+    const firstRows = firstNight.map((c, i) => buildRow(c, c.firstNightReminder, i + 1)).join('');
+    firstList.insertAdjacentHTML('beforeend', firstRows);
+
+    // Other nights
+    const otherNight = chars
+      .filter(c => c.otherNight > 0)
+      .sort((a, b) => a.otherNight - b.otherNight);
+
+    const otherList = document.getElementById('other-night-list');
+    const otherRows = otherNight.map((c, i) => buildRow(c, c.otherNightReminder, i + 1)).join('');
+    // Insert before dawn row
+    document.getElementById('dawn-row').insertAdjacentHTML('beforebegin', otherRows);
+
+    if (otherNight.length > 0) {
+      document.getElementById('dawn-row').style.display = '';
+    }
+  }
+
+  function buildRow(char, reminder, n) {
+    return `
+      <div class="night-row team-${char.team} fade-in">
+        <div class="night-row-num">${n}</div>
+        <div class="night-row-token team-${char.team}">
+          <img
+            src="${imgUrl(char.id)}"
+            alt="${char.name}"
+            onerror="this.style.display='none'"
+            loading="lazy"
+          />
+        </div>
+        <div class="night-row-content">
+          <div class="night-row-name">${char.name}</div>
+          <div class="night-row-reminder">${reminder || '—'}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  render();
+</script>
+
+<style>
+.night-page {
+  padding: 0 1rem 4rem;
+}
+
+.night-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .night-columns { grid-template-columns: 1fr; }
+}
+
+.night-column {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.night-col-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(196, 136, 42, 0.04);
+}
+
+.night-col-title {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.night-moon { font-size: 1.1rem; }
+
+.night-list { padding: 0.5rem 0; }
+
+.night-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.night-row:last-child { border-bottom: none; }
+.night-row:hover { background: var(--bg-hover); }
+
+.night-row.system-row { background: rgba(196,136,42,0.03); }
+
+.night-row-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.night-row-token {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid var(--team-color, var(--border-accent));
+  background: var(--team-bg, rgba(196,136,42,0.1));
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.night-row-token img { width: 100%; height: 100%; object-fit: cover; }
+
+.night-row-content { flex: 1; min-width: 0; }
+
+.night-row-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.2rem;
+}
+
+.system-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  font-family: var(--font-sans);
+}
+
+.night-row-reminder {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+</style>

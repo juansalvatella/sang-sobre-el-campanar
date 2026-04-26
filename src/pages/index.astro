@@ -1,0 +1,520 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { ca } from '../i18n/ca';
+import charactersRaw from '../data/characters.json';
+
+type Character = {
+  id: string;
+  name: string;
+  edition: string;
+  team: string;
+  firstNight: number;
+  firstNightReminder: string;
+  otherNight: number;
+  otherNightReminder: string;
+  reminders: string[];
+  setup: boolean;
+  ability: string;
+  image: string;
+  special: unknown;
+};
+
+const characters = (charactersRaw as Character[]).filter(
+  c => ['tb', 'bmr', 'snv'].includes(c.edition)
+);
+
+const editions = [
+  { id: 'tb',  label: ca.editions.tb,  color: '#c4882a', icon: '🍺', desc: 'La introducció perfecta al joc. 13 Habitants, 4 Forasters, 4 Servents, 4 Dimonis.' },
+  { id: 'bmr', label: ca.editions.bmr, color: '#4a8aaa', icon: '🌙', desc: 'Rols complexos amb habilitats al voltant de la mort i la resurrecció.' },
+  { id: 'snv', label: ca.editions.snv, color: '#8a4aaa', icon: '🌹', desc: 'Alta variabilitat i rols de follia. Ideal per a jugadors avançats.' },
+];
+
+// Recommended player counts per team
+const teamComp: Record<number, { townsfolk: number; outsider: number; minion: number; demon: number }> = {
+  5:  { townsfolk: 3, outsider: 0, minion: 1, demon: 1 },
+  6:  { townsfolk: 3, outsider: 1, minion: 1, demon: 1 },
+  7:  { townsfolk: 5, outsider: 0, minion: 1, demon: 1 },
+  8:  { townsfolk: 5, outsider: 1, minion: 1, demon: 1 },
+  9:  { townsfolk: 5, outsider: 2, minion: 1, demon: 1 },
+  10: { townsfolk: 7, outsider: 0, minion: 2, demon: 1 },
+  11: { townsfolk: 7, outsider: 1, minion: 2, demon: 1 },
+  12: { townsfolk: 7, outsider: 2, minion: 2, demon: 1 },
+  13: { townsfolk: 9, outsider: 0, minion: 3, demon: 1 },
+  14: { townsfolk: 9, outsider: 1, minion: 3, demon: 1 },
+  15: { townsfolk: 9, outsider: 2, minion: 3, demon: 1 },
+};
+
+const teamCompJson = JSON.stringify(teamComp);
+const charactersJson = JSON.stringify(characters);
+const POCKETGRIMOIRE_CDN = 'https://www.pocketgrimoire.co.uk';
+---
+
+<Layout title={ca.setup.title} activePage="setup">
+  <div class="setup-page container">
+
+    <!-- Step 1: Edition -->
+    <section id="step-edition" class="setup-step">
+      <div class="step-header">
+        <div class="step-number">1</div>
+        <div>
+          <h2 class="section-title">{ca.setup.selectEdition}</h2>
+          <p class="section-subtitle">{ca.setup.chooseEdition}</p>
+        </div>
+      </div>
+
+      <div class="edition-grid">
+        {editions.map(ed => (
+          <button
+            class="edition-card card card-hover"
+            data-edition={ed.id}
+            onclick="selectEdition(this)"
+          >
+            <div class="edition-icon">{ed.icon}</div>
+            <h3 class="edition-name" style={`color: ${ed.color}`}>{ed.label}</h3>
+            <p class="edition-desc">{ed.desc}</p>
+          </button>
+        ))}
+      </div>
+    </section>
+
+    <!-- Step 2: Player Count + Characters -->
+    <section id="step-characters" class="setup-step" style="display:none">
+      <div class="step-header">
+        <div class="step-number">2</div>
+        <div>
+          <h2 class="section-title">{ca.setup.playerCount}</h2>
+        </div>
+      </div>
+
+      <!-- Player count buttons -->
+      <div class="player-count-row">
+        {[5,6,7,8,9,10,11,12,13,14,15].map(n => (
+          <button
+            class="count-btn"
+            data-count={n}
+            onclick="selectCount(this)"
+          >{n}</button>
+        ))}
+      </div>
+
+      <!-- Recommended composition -->
+      <div id="comp-display" class="comp-display" style="display:none">
+        <span class="comp-item townsfolk-comp"></span>
+        <span class="comp-sep">·</span>
+        <span class="comp-item outsider-comp"></span>
+        <span class="comp-sep">·</span>
+        <span class="comp-item minion-comp"></span>
+        <span class="comp-sep">·</span>
+        <span class="comp-item demon-comp"></span>
+      </div>
+
+      <!-- Character list -->
+      <div class="step-header" style="margin-top: 2rem">
+        <div class="step-number">3</div>
+        <div>
+          <h2 class="section-title">{ca.setup.selectCharacters}</h2>
+          <p class="section-subtitle" id="char-subtitle">Selecciona els personatges de la partida</p>
+        </div>
+        <div class="char-actions">
+          <button class="btn btn-ghost btn-sm" onclick="selectAllChars()">Tot</button>
+          <button class="btn btn-ghost btn-sm" onclick="deselectAllChars()">Cap</button>
+        </div>
+      </div>
+
+      {['townsfolk', 'outsider', 'minion', 'demon'].map(team => (
+        <div class={`team-section team-${team}`}>
+          <h4 class="team-title">
+            <span class={`badge team-${team}`}>{(ca.teams as Record<string, string>)[team]}</span>
+            <span class="team-count" id={`count-${team}`}></span>
+          </h4>
+          <div class="char-grid" id={`grid-${team}`}></div>
+        </div>
+      ))}
+
+      <!-- Start Game -->
+      <div class="start-section">
+        <div id="selection-summary" class="selection-summary"></div>
+        <button class="btn btn-primary btn-lg" onclick="startGame()" id="start-btn" disabled>
+          {ca.setup.startGame}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+        </button>
+      </div>
+    </section>
+  </div>
+</Layout>
+
+<script define:vars={{ charactersJson, teamCompJson, POCKETGRIMOIRE_CDN }}>
+  const CHARS = JSON.parse(charactersJson);
+  const TEAM_COMP = JSON.parse(teamCompJson);
+  const CDN = POCKETGRIMOIRE_CDN;
+
+  let currentEdition = null;
+  let currentCount = null;
+  let selectedChars = new Set();
+
+  // Load saved state
+  try {
+    const saved = JSON.parse(localStorage.getItem('botc_setup') || '{}');
+    if (saved.edition) { currentEdition = saved.edition; }
+    if (saved.count) { currentCount = saved.count; }
+    if (saved.chars) { selectedChars = new Set(saved.chars); }
+  } catch(_) {}
+
+  function saveState() {
+    localStorage.setItem('botc_setup', JSON.stringify({
+      edition: currentEdition,
+      count: currentCount,
+      chars: [...selectedChars],
+    }));
+  }
+
+  function imgUrl(id) {
+    return `${CDN}/build/img/roles/${id}_g.webp`;
+  }
+
+  function selectEdition(btn) {
+    document.querySelectorAll('.edition-card').forEach(c => c.classList.remove('selected'));
+    btn.classList.add('selected');
+    currentEdition = btn.dataset.edition;
+    saveState();
+
+    document.getElementById('step-characters').style.display = '';
+    renderCharacters();
+    document.getElementById('step-characters').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function selectCount(btn) {
+    document.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentCount = parseInt(btn.dataset.count);
+
+    // Show composition
+    const comp = TEAM_COMP[currentCount];
+    if (comp) {
+      const el = document.getElementById('comp-display');
+      el.style.display = '';
+      el.querySelector('.townsfolk-comp').textContent = `${comp.townsfolk} Habitants`;
+      el.querySelector('.outsider-comp').textContent = `${comp.outsider} Forasters`;
+      el.querySelector('.minion-comp').textContent = `${comp.minion} Servents`;
+      el.querySelector('.demon-comp').textContent = `${comp.demon} Dimonis`;
+    }
+
+    updateSummary();
+    saveState();
+  }
+
+  function renderCharacters() {
+    if (!currentEdition) return;
+    const chars = CHARS.filter(c => c.edition === currentEdition);
+
+    for (const team of ['townsfolk', 'outsider', 'minion', 'demon']) {
+      const grid = document.getElementById(`grid-${team}`);
+      const teamChars = chars.filter(c => c.team === team);
+      grid.innerHTML = teamChars.map(c => `
+        <button
+          class="char-card ${selectedChars.has(c.id) ? 'selected' : ''}"
+          data-id="${c.id}"
+          data-team="${c.team}"
+          onclick="toggleChar(this)"
+          title="${c.ability}"
+        >
+          <div class="char-token team-${c.team}">
+            <img
+              src="${imgUrl(c.id)}"
+              alt="${c.name}"
+              onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1 1%22/>';this.style.display='none'"
+              loading="lazy"
+            />
+          </div>
+          <span class="char-name">${c.name}</span>
+          <div class="char-check">✓</div>
+        </button>
+      `).join('');
+
+      document.getElementById(`count-${team}`).textContent = `(${teamChars.length})`;
+    }
+
+    updateSummary();
+
+    // Restore count selection
+    if (currentCount) {
+      const btn = document.querySelector(`[data-count="${currentCount}"]`);
+      if (btn) selectCount(btn);
+    }
+  }
+
+  function toggleChar(btn) {
+    const id = btn.dataset.id;
+    if (selectedChars.has(id)) {
+      selectedChars.delete(id);
+      btn.classList.remove('selected');
+    } else {
+      selectedChars.add(id);
+      btn.classList.add('selected');
+    }
+    updateSummary();
+    saveState();
+  }
+
+  function selectAllChars() {
+    document.querySelectorAll('.char-card').forEach(btn => {
+      selectedChars.add(btn.dataset.id);
+      btn.classList.add('selected');
+    });
+    updateSummary();
+    saveState();
+  }
+
+  function deselectAllChars() {
+    document.querySelectorAll('.char-card').forEach(btn => {
+      selectedChars.delete(btn.dataset.id);
+      btn.classList.remove('selected');
+    });
+    updateSummary();
+    saveState();
+  }
+
+  function updateSummary() {
+    const n = selectedChars.size;
+    const summary = document.getElementById('selection-summary');
+    const startBtn = document.getElementById('start-btn');
+    summary.textContent = n > 0
+      ? `${n} personatge${n !== 1 ? 's' : ''} seleccionat${n !== 1 ? 's' : ''}`
+      : 'Selecciona almenys un personatge';
+    startBtn.disabled = n === 0;
+  }
+
+  function startGame() {
+    if (selectedChars.size === 0) return;
+    saveState();
+    window.location.href = '/grimori';
+  }
+
+  // Restore edition on load
+  if (currentEdition) {
+    const btn = document.querySelector(`[data-edition="${currentEdition}"]`);
+    if (btn) {
+      btn.classList.add('selected');
+      document.getElementById('step-characters').style.display = '';
+      renderCharacters();
+    }
+  }
+</script>
+
+<style>
+.setup-page {
+  padding: 2rem 1rem 4rem;
+  max-width: 1100px;
+}
+
+.setup-step { margin-bottom: 3rem; }
+
+.step-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.step-number {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #0a0505;
+  font-weight: bold;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.char-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Edition grid */
+.edition-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.edition-card {
+  text-align: left;
+  padding: 1.5rem;
+  position: relative;
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+}
+
+.edition-card.selected {
+  border-left-color: var(--accent);
+  background: var(--bg-hover);
+  box-shadow: var(--shadow);
+}
+
+.edition-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.edition-name {
+  font-size: 1.1rem;
+  font-family: var(--font-serif);
+  margin-bottom: 0.5rem;
+}
+
+.edition-desc {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+/* Player count */
+.player-count-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.count-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.count-btn:hover { border-color: var(--border-accent); color: var(--text); }
+.count-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0a0505;
+}
+
+/* Composition display */
+.comp-display {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.comp-item { color: var(--text-muted); }
+.comp-sep { color: var(--text-dim); }
+
+/* Team sections */
+.team-section { margin-bottom: 1.5rem; }
+
+.team-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.team-count { color: var(--text-dim); font-size: 0.85rem; font-family: var(--font-sans); }
+
+/* Character grid */
+.char-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 0.75rem;
+}
+
+.char-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.4rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.char-card:hover {
+  border-color: var(--border-accent);
+  background: var(--bg-hover);
+}
+
+.char-card.selected {
+  border-color: var(--accent);
+  background: rgba(196, 136, 42, 0.08);
+}
+
+.char-token {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid var(--team-color, var(--border-accent));
+  background: var(--team-bg, rgba(196,136,42,0.1));
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.char-token img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.char-name {
+  font-size: 0.7rem;
+  text-align: center;
+  color: var(--text-muted);
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.char-check {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  font-size: 0.7rem;
+  color: var(--accent);
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.char-card.selected .char-check { opacity: 1; }
+
+/* Start section */
+.start-section {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.selection-summary {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+</style>
