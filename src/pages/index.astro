@@ -16,21 +16,15 @@ type Character = {
   setup: boolean;
   ability: string;
   image: string;
-  special: unknown;
 };
 
 const characters = (charactersRaw as Character[]).filter(
   c => ['tb', 'bmr', 'snv'].includes(c.edition)
 );
+const charactersJson = JSON.stringify(characters);
+const POCKETGRIMOIRE_CDN = 'https://www.pocketgrimoire.co.uk';
 
-const editions = [
-  { id: 'tb',  label: ca.editions.tb,  color: '#c4882a', icon: '🍺', desc: 'La introducció perfecta al joc. 13 Habitants, 4 Forasters, 4 Servents, 4 Dimonis.' },
-  { id: 'bmr', label: ca.editions.bmr, color: '#4a8aaa', icon: '🌙', desc: 'Rols complexos amb habilitats al voltant de la mort i la resurrecció.' },
-  { id: 'snv', label: ca.editions.snv, color: '#8a4aaa', icon: '🌹', desc: 'Alta variabilitat i rols de follia. Ideal per a jugadors avançats.' },
-];
-
-// Recommended player counts per team
-const teamComp: Record<number, { townsfolk: number; outsider: number; minion: number; demon: number }> = {
+const teamCompMap: Record<number, { townsfolk: number; outsider: number; minion: number; demon: number }> = {
   5:  { townsfolk: 3, outsider: 0, minion: 1, demon: 1 },
   6:  { townsfolk: 3, outsider: 1, minion: 1, demon: 1 },
   7:  { townsfolk: 5, outsider: 0, minion: 1, demon: 1 },
@@ -43,263 +37,596 @@ const teamComp: Record<number, { townsfolk: number; outsider: number; minion: nu
   14: { townsfolk: 9, outsider: 1, minion: 3, demon: 1 },
   15: { townsfolk: 9, outsider: 2, minion: 3, demon: 1 },
 };
-
-const teamCompJson = JSON.stringify(teamComp);
-const charactersJson = JSON.stringify(characters);
-const POCKETGRIMOIRE_CDN = 'https://www.pocketgrimoire.co.uk';
+const teamCompJson = JSON.stringify(teamCompMap);
 ---
 
-<Layout title={ca.setup.title} activePage="setup">
+<Layout title="Barret Seleccionador" activePage="setup">
   <div class="setup-page container">
 
-    <!-- Step 1: Edition -->
-    <section id="step-edition" class="setup-step">
-      <div class="step-header">
-        <div class="step-number">1</div>
-        <div>
-          <h2 class="section-title">{ca.setup.selectEdition}</h2>
-          <p class="section-subtitle">{ca.setup.chooseEdition}</p>
-        </div>
+    <!-- Header -->
+    <div class="hat-header">
+      <div class="hat-icon">🎩</div>
+      <div>
+        <h1 class="page-title" style="text-align:left">Barret Seleccionador</h1>
+        <p class="page-subtitle" style="text-align:left">
+          Afegeix personatges al barret i randomitza la partida
+        </p>
       </div>
+    </div>
 
-      <div class="edition-grid">
-        {editions.map(ed => (
-          <button
-            class="edition-card card card-hover"
-            data-edition={ed.id}
-            onclick="selectEdition(this)"
-          >
-            <div class="edition-icon">{ed.icon}</div>
-            <h3 class="edition-name" style={`color: ${ed.color}`}>{ed.label}</h3>
-            <p class="edition-desc">{ed.desc}</p>
-          </button>
-        ))}
+    <!-- Action bar -->
+    <div class="action-bar">
+      <button class="btn btn-primary" onclick="openCharSelector()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        Afegir Personatge
+      </button>
+      <button class="btn btn-secondary" onclick="openCreateCharModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+        Crear Personatge
+      </button>
+      <button class="btn btn-ghost" onclick="openCharSheet()" id="sheet-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
+        Full de Personatge
+      </button>
+      <button class="btn btn-danger" onclick="resetHat()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+        Netejar
+      </button>
+    </div>
+
+    <!-- Hat display -->
+    <div class="hat-area">
+      <div id="hat-empty" class="hat-empty">
+        <span style="font-size:3rem">🎩</span>
+        <p>El barret és buit.</p>
+        <p style="font-size:0.85rem;margin-top:0.25rem">Afegeix personatges per començar.</p>
       </div>
-    </section>
+      <div id="hat-tokens" class="hat-tokens" style="display:none"></div>
+    </div>
 
-    <!-- Step 2: Player Count + Characters -->
-    <section id="step-characters" class="setup-step" style="display:none">
-      <div class="step-header">
-        <div class="step-number">2</div>
-        <div>
-          <h2 class="section-title">{ca.setup.playerCount}</h2>
-        </div>
-      </div>
-
-      <!-- Player count buttons -->
+    <!-- Player count + randomize -->
+    <div class="randomize-section">
       <div class="player-count-row">
+        <span class="count-label">Jugadors:</span>
         {[5,6,7,8,9,10,11,12,13,14,15].map(n => (
-          <button
-            class="count-btn"
-            data-count={n}
-            onclick="selectCount(this)"
-          >{n}</button>
+          <button class="count-btn" data-count={n} onclick="selectCount(this)">{n}</button>
         ))}
       </div>
 
-      <!-- Recommended composition -->
-      <div id="comp-display" class="comp-display" style="display:none">
-        <span class="comp-item townsfolk-comp"></span>
-        <span class="comp-sep">·</span>
-        <span class="comp-item outsider-comp"></span>
-        <span class="comp-sep">·</span>
-        <span class="comp-item minion-comp"></span>
-        <span class="comp-sep">·</span>
-        <span class="comp-item demon-comp"></span>
+      <div id="comp-bar" class="comp-bar" style="display:none">
+        <span class="comp-lbl">Composició:</span>
+        <span class="comp-chip townsfolk-chip"></span>
+        <span class="comp-chip outsider-chip"></span>
+        <span class="comp-chip minion-chip"></span>
+        <span class="comp-chip demon-chip"></span>
       </div>
 
-      <!-- Character list -->
-      <div class="step-header" style="margin-top: 2rem">
-        <div class="step-number">3</div>
-        <div>
-          <h2 class="section-title">{ca.setup.selectCharacters}</h2>
-          <p class="section-subtitle" id="char-subtitle">Selecciona els personatges de la partida</p>
-        </div>
-        <div class="char-actions">
-          <button class="btn btn-ghost btn-sm" onclick="selectAllChars()">Tot</button>
-          <button class="btn btn-ghost btn-sm" onclick="deselectAllChars()">Cap</button>
-        </div>
-      </div>
-
-      {['townsfolk', 'outsider', 'minion', 'demon'].map(team => (
-        <div class={`team-section team-${team}`}>
-          <h4 class="team-title">
-            <span class={`badge team-${team}`}>{(ca.teams as Record<string, string>)[team]}</span>
-            <span class="team-count" id={`count-${team}`}></span>
-          </h4>
-          <div class="char-grid" id={`grid-${team}`}></div>
-        </div>
-      ))}
-
-      <!-- Start Game -->
-      <div class="start-section">
-        <div id="selection-summary" class="selection-summary"></div>
-        <button class="btn btn-primary btn-lg" onclick="startGame()" id="start-btn" disabled>
-          {ca.setup.startGame}
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M8 5v14l11-7z"/>
-          </svg>
+      <div class="randomize-row">
+        <button class="btn btn-primary btn-lg" id="randomize-btn" onclick="randomize()" disabled>
+          🎲 Randomitzar Partida
         </button>
+        <div id="randomize-info" class="randomize-info"></div>
       </div>
-    </section>
+    </div>
+
+    <!-- Result: Dimonis de farol -->
+    <div id="farol-section" class="farol-section" style="display:none">
+      <h3 class="section-title" style="font-size:1rem">🎭 Dimonis de Farol</h3>
+      <p class="section-subtitle" style="font-size:0.82rem">
+        Tres personatges que no estan en joc. El Dimoni pot fingir ser qualsevol d'aquests.
+      </p>
+      <div id="farol-tokens" class="farol-tokens"></div>
+    </div>
+
+  </div><!-- end container -->
+
+  <!-- ===================== MODALS ===================== -->
+
+  <!-- Character selector modal -->
+  <div id="char-selector-modal" class="modal-overlay" style="display:none" onclick="closeSelectorModal(event)">
+    <div class="modal" style="max-width:760px" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Selecciona Personatge</h3>
+        <button class="modal-close btn" onclick="closeSelectorModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <!-- Edition filter -->
+        <div class="edition-filter">
+          <button class="ed-btn active" data-ed="all" onclick="filterEdition(this)">Tots</button>
+          <button class="ed-btn" data-ed="tb"  onclick="filterEdition(this)">🍺 Cerveseria</button>
+          <button class="ed-btn" data-ed="bmr" onclick="filterEdition(this)">🌙 Lluna</button>
+          <button class="ed-btn" data-ed="snv" onclick="filterEdition(this)">🌹 Sectes</button>
+        </div>
+        <input
+          type="text"
+          class="input"
+          id="selector-search"
+          placeholder="Cerca per nom..."
+          oninput="filterSelectorSearch(this.value)"
+          style="margin:0.75rem 0"
+        />
+        <div id="selector-grid" class="selector-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create character modal -->
+  <div id="create-char-modal" class="modal-overlay" style="display:none" onclick="closeCreateModal(event)">
+    <div class="modal" style="max-width:480px" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>✏️ Crear Personatge</h3>
+        <button class="modal-close btn" onclick="closeCreateModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Nom del personatge *</label>
+          <input type="text" id="cc-name" class="input" placeholder="Ex: El Mag Fosc" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descripció del poder</label>
+          <textarea id="cc-ability" class="input" rows="3" placeholder="Ex: Cada nit, aprens si el teu veí és bo o dolent." style="resize:vertical"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Alineació</label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="cc-align" value="good" checked /> Bo
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="cc-align" value="evil" /> Dolent
+              </label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Filiació</label>
+            <select id="cc-team" class="input">
+              <option value="townsfolk">Vilatà</option>
+              <option value="outsider">Foraster</option>
+              <option value="traveller">Viatger</option>
+              <option value="minion">Esbirro</option>
+              <option value="demon">Dimoni</option>
+            </select>
+          </div>
+        </div>
+        <div id="cc-error" class="form-error" style="display:none"></div>
+        <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1rem">
+          <button class="btn btn-ghost" onclick="closeCreateModal()">Cancel·lar</button>
+          <button class="btn btn-primary" onclick="saveCustomChar()">Afegir al Barret</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Character sheet modal -->
+  <div id="sheet-modal" class="modal-overlay" style="display:none" onclick="closeSheetModal(event)">
+    <div class="modal" style="max-width:680px" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>📄 Full de Personatge</h3>
+        <button class="modal-close btn" onclick="closeSheetModal()">✕</button>
+      </div>
+      <div class="modal-body" id="sheet-content">
+      </div>
+    </div>
   </div>
 </Layout>
 
 <script define:vars={{ charactersJson, teamCompJson, POCKETGRIMOIRE_CDN }}>
-  const CHARS = JSON.parse(charactersJson);
-  const TEAM_COMP = JSON.parse(teamCompJson);
-  const CDN = POCKETGRIMOIRE_CDN;
+  const ALL_CHARS  = JSON.parse(charactersJson);
+  const TEAM_COMP  = JSON.parse(teamCompJson);
+  const CDN        = POCKETGRIMOIRE_CDN;
 
-  let currentEdition = null;
-  let currentCount = null;
-  let selectedChars = new Set();
+  const TEAM_LABELS = {
+    townsfolk: 'Vilatà',
+    outsider:  'Foraster',
+    minion:    'Esbirro',
+    demon:     'Dimoni',
+    traveller: 'Viatger',
+    fabled:    'Llegenda',
+  };
 
-  // Load saved state
-  try {
-    const saved = JSON.parse(localStorage.getItem('botc_setup') || '{}');
-    if (saved.edition) { currentEdition = saved.edition; }
-    if (saved.count) { currentCount = saved.count; }
-    if (saved.chars) { selectedChars = new Set(saved.chars); }
-  } catch(_) {}
+  // --- State ---
+  let hat         = [];   // characters in the hat (ALL_CHARS entries + custom)
+  let playerCount = null;
+  let lastDraw    = null; // { assigned: [{char,player}], farols: [char] }
+
+  // --- Persistence ---
+  function loadState() {
+    try {
+      const s = JSON.parse(localStorage.getItem('botc_hat') || '{}');
+      hat         = s.hat         || [];
+      playerCount = s.playerCount || null;
+      lastDraw    = s.lastDraw    || null;
+    } catch(_) {}
+  }
 
   function saveState() {
+    localStorage.setItem('botc_hat', JSON.stringify({ hat, playerCount, lastDraw }));
+    // Also keep botc_setup in sync so grimori / night-order can read it
     localStorage.setItem('botc_setup', JSON.stringify({
-      edition: currentEdition,
-      count: currentCount,
-      chars: [...selectedChars],
+      chars: hat.map(c => c.id),
+      count: playerCount,
     }));
   }
 
+  // --- Image ---
   function imgUrl(id) {
+    // Custom chars have no image
+    if (!id || id.startsWith('custom_')) return null;
     return `${CDN}/build/img/roles/${id}_g.webp`;
   }
 
-  function selectEdition(btn) {
-    document.querySelectorAll('.edition-card').forEach(c => c.classList.remove('selected'));
-    btn.classList.add('selected');
-    currentEdition = btn.dataset.edition;
-    saveState();
-
-    document.getElementById('step-characters').style.display = '';
-    renderCharacters();
-    document.getElementById('step-characters').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  function tokenHtml(c, extraClass = '') {
+    const url = imgUrl(c.id);
+    return `
+      <div class="hat-token team-${c.team} ${extraClass}" title="${c.name}: ${c.ability || ''}">
+        ${url
+          ? `<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`
+          : `<span class="custom-initial">${c.name[0]}</span>`
+        }
+        <div class="hat-token-label">${c.name}</div>
+      </div>
+    `;
   }
 
+  // --- Hat render ---
+  function renderHat() {
+    const empty  = document.getElementById('hat-empty');
+    const tokens = document.getElementById('hat-tokens');
+
+    if (hat.length === 0) {
+      empty.style.display  = '';
+      tokens.style.display = 'none';
+      checkRandomizeReady();
+      return;
+    }
+
+    empty.style.display  = 'none';
+    tokens.style.display = '';
+
+    tokens.innerHTML = hat.map((c, i) => `
+      <div class="hat-item" data-idx="${i}">
+        ${tokenHtml(c)}
+        <button class="hat-remove-btn" onclick="removeFromHat(${i})" title="Treure del barret">✕</button>
+      </div>
+    `).join('');
+
+    checkRandomizeReady();
+  }
+
+  function removeFromHat(idx) {
+    hat.splice(idx, 1);
+    saveState();
+    renderHat();
+    renderSelectorGrid(currentEdFilter, '');
+  }
+
+  function addToHat(char) {
+    // Avoid duplicates
+    if (hat.find(c => c.id === char.id)) return;
+    hat.push(char);
+    saveState();
+    renderHat();
+  }
+
+  function resetHat() {
+    if (!confirm('Netejar el barret i totes les dades? Aquesta acció no es pot desfer.')) return;
+    hat = [];
+    playerCount = null;
+    lastDraw    = null;
+    saveState();
+    localStorage.removeItem('botc_game');
+    renderHat();
+    document.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('comp-bar').style.display = 'none';
+    hideFarol();
+    document.getElementById('randomize-info').textContent = '';
+  }
+
+  // --- Randomize ready check ---
+  function checkRandomizeReady() {
+    const btn = document.getElementById('randomize-btn');
+    btn.disabled = !(hat.length >= 1 && playerCount);
+  }
+
+  // --- Player count ---
   function selectCount(btn) {
     document.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    currentCount = parseInt(btn.dataset.count);
+    playerCount = parseInt(btn.dataset.count);
 
-    // Show composition
-    const comp = TEAM_COMP[currentCount];
+    const comp = TEAM_COMP[playerCount];
     if (comp) {
-      const el = document.getElementById('comp-display');
-      el.style.display = '';
-      el.querySelector('.townsfolk-comp').textContent = `${comp.townsfolk} Habitants`;
-      el.querySelector('.outsider-comp').textContent = `${comp.outsider} Forasters`;
-      el.querySelector('.minion-comp').textContent = `${comp.minion} Servents`;
-      el.querySelector('.demon-comp').textContent = `${comp.demon} Dimonis`;
+      const bar = document.getElementById('comp-bar');
+      bar.style.display = '';
+      bar.querySelector('.townsfolk-chip').textContent = `${comp.townsfolk} Vilatans`;
+      bar.querySelector('.outsider-chip').textContent  = `${comp.outsider} Forasters`;
+      bar.querySelector('.minion-chip').textContent    = `${comp.minion} Esbirros`;
+      bar.querySelector('.demon-chip').textContent     = `${comp.demon} Dimoni`;
     }
 
-    updateSummary();
     saveState();
+    checkRandomizeReady();
   }
 
-  function renderCharacters() {
-    if (!currentEdition) return;
-    const chars = CHARS.filter(c => c.edition === currentEdition);
+  // --- Randomize ---
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
 
-    for (const team of ['townsfolk', 'outsider', 'minion', 'demon']) {
-      const grid = document.getElementById(`grid-${team}`);
-      const teamChars = chars.filter(c => c.team === team);
-      grid.innerHTML = teamChars.map(c => `
+  function randomize() {
+    if (!playerCount || hat.length === 0) return;
+
+    const comp = TEAM_COMP[playerCount] || {
+      townsfolk: Math.max(1, playerCount - 3),
+      outsider: 0,
+      minion: 1,
+      demon: 1,
+    };
+
+    const townsfolkPool = shuffle(hat.filter(c => c.team === 'townsfolk'));
+    const outsiderPool  = shuffle(hat.filter(c => c.team === 'outsider'));
+    const minionPool    = shuffle(hat.filter(c => c.team === 'minion'));
+    const demonPool     = shuffle(hat.filter(c => c.team === 'demon'));
+
+    const assigned = [];
+
+    // Draw demon
+    if (demonPool.length > 0) assigned.push(...demonPool.slice(0, comp.demon));
+    // Draw minions
+    if (minionPool.length > 0) assigned.push(...minionPool.slice(0, comp.minion));
+    // Draw outsiders
+    if (outsiderPool.length > 0) assigned.push(...outsiderPool.slice(0, comp.outsider));
+    // Fill remaining with townsfolk
+    const needed = playerCount - assigned.length;
+    assigned.push(...townsfolkPool.slice(0, needed));
+
+    // If not enough from composition, fill rest randomly from hat
+    const assignedIds = new Set(assigned.map(c => c.id));
+    if (assigned.length < playerCount) {
+      const rest = shuffle(hat.filter(c => !assignedIds.has(c.id)));
+      assigned.push(...rest.slice(0, playerCount - assigned.length));
+    }
+
+    // Pick 3 Dimonis de Farol: townsfolk/outsider chars NOT in assigned
+    const usedIds = new Set(assigned.map(c => c.id));
+    const bluffPool = shuffle(
+      hat.filter(c => !usedIds.has(c.id) && (c.team === 'townsfolk' || c.team === 'outsider'))
+    );
+    const farols = bluffPool.slice(0, 3);
+
+    lastDraw = { assigned, farols };
+    saveState();
+
+    // Save to game state as players
+    const players = shuffle(assigned).map((c, i) => ({
+      id: Date.now() + i,
+      name: `Jugador ${i + 1}`,
+      charId: c.id,
+      dead: false,
+      reminders: [],
+      customChar: c.id.startsWith('custom_') ? c : null,
+    }));
+    localStorage.setItem('botc_game', JSON.stringify({ players, bluffs: farols.map(c=>c.id), notes: '' }));
+    localStorage.setItem('botc_custom_chars', JSON.stringify(
+      hat.filter(c => c.id.startsWith('custom_'))
+    ));
+
+    // Show result info
+    document.getElementById('randomize-info').innerHTML =
+      `<span class="randomize-ok">✓ ${assigned.length} personatge${assigned.length !== 1 ? 's' : ''} assignats</span>
+       <a href="/grimori" class="btn btn-primary btn-sm" style="text-decoration:none;margin-left:0.75rem">Obrir Grimori →</a>`;
+
+    showFarols(farols);
+  }
+
+  function showFarols(farols) {
+    const sec = document.getElementById('farol-section');
+    const tok = document.getElementById('farol-tokens');
+    if (farols.length === 0) {
+      sec.style.display = 'none';
+      return;
+    }
+    sec.style.display = '';
+    tok.innerHTML = farols.map(c => tokenHtml(c)).join('');
+  }
+
+  function hideFarol() {
+    document.getElementById('farol-section').style.display = 'none';
+  }
+
+  // --- Character selector ---
+  let currentEdFilter = 'all';
+
+  function openCharSelector() {
+    currentEdFilter = 'all';
+    document.querySelectorAll('.ed-btn').forEach(b => b.classList.toggle('active', b.dataset.ed === 'all'));
+    renderSelectorGrid('all', '');
+    document.getElementById('selector-search').value = '';
+    document.getElementById('char-selector-modal').style.display = '';
+  }
+
+  function closeSelectorModal(e) {
+    if (!e || e.target.id === 'char-selector-modal') {
+      document.getElementById('char-selector-modal').style.display = 'none';
+    }
+  }
+
+  function filterEdition(btn) {
+    document.querySelectorAll('.ed-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentEdFilter = btn.dataset.ed;
+    renderSelectorGrid(currentEdFilter, document.getElementById('selector-search').value.toLowerCase());
+  }
+
+  function filterSelectorSearch(q) {
+    renderSelectorGrid(currentEdFilter, q.toLowerCase());
+  }
+
+  function renderSelectorGrid(ed, q) {
+    const inHat = new Set(hat.map(c => c.id));
+    let chars = ALL_CHARS;
+    if (ed !== 'all') chars = chars.filter(c => c.edition === ed);
+    if (q) chars = chars.filter(c => c.name.toLowerCase().includes(q));
+
+    const grid = document.getElementById('selector-grid');
+    if (chars.length === 0) {
+      grid.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:2rem">Cap resultat.</p>';
+      return;
+    }
+
+    grid.innerHTML = chars.map(c => {
+      const inH = inHat.has(c.id);
+      const url = imgUrl(c.id);
+      return `
         <button
-          class="char-card ${selectedChars.has(c.id) ? 'selected' : ''}"
-          data-id="${c.id}"
-          data-team="${c.team}"
-          onclick="toggleChar(this)"
-          title="${c.ability}"
+          class="sel-char ${inH ? 'in-hat' : ''} team-${c.team}"
+          onclick="${inH ? `removeFromHatById('${c.id}', this)` : `addCharFromSelector('${c.id}', this)`}"
+          title="${c.ability || ''}"
         >
-          <div class="char-token team-${c.team}">
-            <img
-              src="${imgUrl(c.id)}"
-              alt="${c.name}"
-              onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1 1%22/>';this.style.display='none'"
-              loading="lazy"
-            />
+          <div class="sel-img team-${c.team}">
+            ${url ? `<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>` : `<span>${c.name[0]}</span>`}
           </div>
-          <span class="char-name">${c.name}</span>
-          <div class="char-check">✓</div>
+          <span>${c.name}</span>
+          <div class="sel-overlay">${inH ? '✓' : '+'}</div>
         </button>
-      `).join('');
-
-      document.getElementById(`count-${team}`).textContent = `(${teamChars.length})`;
-    }
-
-    updateSummary();
-
-    // Restore count selection
-    if (currentCount) {
-      const btn = document.querySelector(`[data-count="${currentCount}"]`);
-      if (btn) selectCount(btn);
-    }
+      `;
+    }).join('');
   }
 
-  function toggleChar(btn) {
-    const id = btn.dataset.id;
-    if (selectedChars.has(id)) {
-      selectedChars.delete(id);
-      btn.classList.remove('selected');
-    } else {
-      selectedChars.add(id);
-      btn.classList.add('selected');
-    }
-    updateSummary();
+  function addCharFromSelector(id, btn) {
+    const char = ALL_CHARS.find(c => c.id === id);
+    if (!char) return;
+    addToHat(char);
+    btn.classList.add('in-hat');
+    btn.querySelector('.sel-overlay').textContent = '✓';
+    btn.onclick = () => { removeFromHatById(id, btn); };
+  }
+
+  function removeFromHatById(id, btn) {
+    hat = hat.filter(c => c.id !== id);
     saveState();
-  }
-
-  function selectAllChars() {
-    document.querySelectorAll('.char-card').forEach(btn => {
-      selectedChars.add(btn.dataset.id);
-      btn.classList.add('selected');
-    });
-    updateSummary();
-    saveState();
-  }
-
-  function deselectAllChars() {
-    document.querySelectorAll('.char-card').forEach(btn => {
-      selectedChars.delete(btn.dataset.id);
-      btn.classList.remove('selected');
-    });
-    updateSummary();
-    saveState();
-  }
-
-  function updateSummary() {
-    const n = selectedChars.size;
-    const summary = document.getElementById('selection-summary');
-    const startBtn = document.getElementById('start-btn');
-    summary.textContent = n > 0
-      ? `${n} personatge${n !== 1 ? 's' : ''} seleccionat${n !== 1 ? 's' : ''}`
-      : 'Selecciona almenys un personatge';
-    startBtn.disabled = n === 0;
-  }
-
-  function startGame() {
-    if (selectedChars.size === 0) return;
-    saveState();
-    window.location.href = '/grimori';
-  }
-
-  // Restore edition on load
-  if (currentEdition) {
-    const btn = document.querySelector(`[data-edition="${currentEdition}"]`);
+    renderHat();
     if (btn) {
-      btn.classList.add('selected');
-      document.getElementById('step-characters').style.display = '';
-      renderCharacters();
+      btn.classList.remove('in-hat');
+      btn.querySelector('.sel-overlay').textContent = '+';
+      btn.onclick = () => { addCharFromSelector(id, btn); };
     }
+  }
+
+  // --- Create custom character ---
+  function openCreateCharModal() {
+    document.getElementById('cc-name').value    = '';
+    document.getElementById('cc-ability').value = '';
+    document.getElementById('cc-team').value    = 'townsfolk';
+    document.querySelectorAll('[name="cc-align"]')[0].checked = true;
+    document.getElementById('cc-error').style.display = 'none';
+    document.getElementById('create-char-modal').style.display = '';
+    document.getElementById('cc-name').focus();
+  }
+
+  function closeCreateModal(e) {
+    if (!e || e.target.id === 'create-char-modal') {
+      document.getElementById('create-char-modal').style.display = 'none';
+    }
+  }
+
+  function saveCustomChar() {
+    const name    = document.getElementById('cc-name').value.trim();
+    const ability = document.getElementById('cc-ability').value.trim();
+    const team    = document.getElementById('cc-team').value;
+    const align   = document.querySelector('[name="cc-align"]:checked')?.value || 'good';
+    const errEl   = document.getElementById('cc-error');
+
+    if (!name) {
+      errEl.textContent = 'El nom és obligatori.';
+      errEl.style.display = '';
+      return;
+    }
+
+    const custom = {
+      id:                 `custom_${Date.now()}`,
+      name,
+      ability,
+      team,
+      alignment:          align,
+      edition:            'custom',
+      firstNight:         0,
+      firstNightReminder: '',
+      otherNight:         0,
+      otherNightReminder: '',
+      reminders:          [],
+      setup:              false,
+      image:              '',
+    };
+
+    addToHat(custom);
+    closeCreateModal();
+  }
+
+  // --- Character sheet ---
+  function openCharSheet() {
+    const content = document.getElementById('sheet-content');
+    if (hat.length === 0) {
+      content.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:2rem">El barret és buit.</p>';
+    } else {
+      const byTeam = {};
+      hat.forEach(c => {
+        if (!byTeam[c.team]) byTeam[c.team] = [];
+        byTeam[c.team].push(c);
+      });
+      const order = ['townsfolk','outsider','minion','demon','traveller','fabled'];
+      content.innerHTML = order.filter(t => byTeam[t]?.length > 0).map(team => `
+        <div style="margin-bottom:1.25rem">
+          <h4 class="team-title">
+            <span class="badge team-${team}">${TEAM_LABELS[team] || team}</span>
+          </h4>
+          <div class="sheet-char-list">
+            ${byTeam[team].map(c => {
+              const url = imgUrl(c.id);
+              return `
+                <div class="sheet-char">
+                  <div class="sheet-token team-${c.team}">
+                    ${url ? `<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>` : `<span>${c.name[0]}</span>`}
+                  </div>
+                  <div>
+                    <div style="font-size:0.9rem;font-weight:600">${c.name}</div>
+                    <div style="font-size:0.78rem;color:var(--text-muted)">${c.ability || ''}</div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+    document.getElementById('sheet-modal').style.display = '';
+  }
+
+  function closeSheetModal(e) {
+    if (!e || e.target.id === 'sheet-modal') {
+      document.getElementById('sheet-modal').style.display = 'none';
+    }
+  }
+
+  // --- Init ---
+  loadState();
+  renderHat();
+
+  if (playerCount) {
+    const btn = document.querySelector(`[data-count="${playerCount}"]`);
+    if (btn) selectCount(btn);
+  }
+
+  if (lastDraw?.farols?.length > 0) {
+    showFarols(lastDraw.farols.map(c =>
+      hat.find(h => h.id === c.id) || c
+    ).filter(Boolean));
   }
 </script>
 
@@ -309,212 +636,316 @@ const POCKETGRIMOIRE_CDN = 'https://www.pocketgrimoire.co.uk';
   max-width: 1100px;
 }
 
-.setup-step { margin-bottom: 3rem; }
-
-.step-header {
+/* Header */
+.hat-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 1rem;
   margin-bottom: 1.5rem;
-  flex-wrap: wrap;
 }
+.hat-icon { font-size: 3rem; line-height: 1; }
 
-.step-number {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: #0a0505;
-  font-weight: bold;
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.char-actions {
-  margin-left: auto;
-  display: flex;
-  gap: 0.5rem;
-}
-
-/* Edition grid */
-.edition-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1rem;
-}
-
-.edition-card {
-  text-align: left;
-  padding: 1.5rem;
-  position: relative;
-  border-left: 3px solid transparent;
-  transition: all 0.2s;
-}
-
-.edition-card.selected {
-  border-left-color: var(--accent);
-  background: var(--bg-hover);
-  box-shadow: var(--shadow);
-}
-
-.edition-icon {
-  font-size: 2rem;
-  margin-bottom: 0.75rem;
-}
-
-.edition-name {
-  font-size: 1.1rem;
-  font-family: var(--font-serif);
-  margin-bottom: 0.5rem;
-}
-
-.edition-desc {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  line-height: 1.4;
-}
-
-/* Player count */
-.player-count-row {
+/* Action bar */
+.action-bar {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.count-btn {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--bg-card);
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  font-weight: 600;
-  transition: all 0.15s;
-}
-
-.count-btn:hover { border-color: var(--border-accent); color: var(--text); }
-.count-btn.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #0a0505;
-}
-
-/* Composition display */
-.comp-display {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  padding: 0.75rem 1rem;
+/* Hat area */
+.hat-area {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  margin-bottom: 0.5rem;
-  font-size: 0.85rem;
-  flex-wrap: wrap;
+  min-height: 140px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  position: relative;
 }
 
-.comp-item { color: var(--text-muted); }
-.comp-sep { color: var(--text-dim); }
-
-/* Team sections */
-.team-section { margin-bottom: 1.5rem; }
-
-.team-title {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.team-count { color: var(--text-dim); font-size: 0.85rem; font-family: var(--font-sans); }
-
-/* Character grid */
-.char-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-  gap: 0.75rem;
-}
-
-.char-card {
+.hat-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.6rem 0.4rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: all 0.15s;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 110px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.hat-tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.25rem;
+}
+
+.hat-item {
   position: relative;
 }
 
-.char-card:hover {
-  border-color: var(--border-accent);
-  background: var(--bg-hover);
+.hat-remove-btn {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+  font-size: 0.6rem;
+  line-height: 1;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  z-index: 5;
 }
+.hat-item:hover .hat-remove-btn { display: flex; }
 
-.char-card.selected {
-  border-color: var(--accent);
-  background: rgba(196, 136, 42, 0.08);
-}
-
-.char-token {
-  width: 56px;
-  height: 56px;
+.hat-token {
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   border: 2px solid var(--team-color, var(--border-accent));
   background: var(--team-bg, rgba(196,136,42,0.1));
   overflow: hidden;
+  position: relative;
+  cursor: default;
   display: flex;
   align-items: center;
   justify-content: center;
 }
+.hat-token img { width: 100%; height: 100%; object-fit: cover; }
 
-.char-token img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.char-name {
-  font-size: 0.7rem;
-  text-align: center;
+.custom-initial {
+  font-size: 1.4rem;
+  font-weight: bold;
   color: var(--text-muted);
-  line-height: 1.2;
-  word-break: break-word;
 }
 
-.char-check {
+.hat-token-label {
   position: absolute;
-  top: 3px;
-  right: 5px;
-  font-size: 0.7rem;
-  color: var(--accent);
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  background: rgba(10,5,5,0.9);
+  padding: 2px 5px;
+  border-radius: 3px;
+  pointer-events: none;
   opacity: 0;
-  transition: opacity 0.1s;
+  transition: opacity 0.15s;
+}
+.hat-item:hover .hat-token-label { opacity: 1; }
+
+/* Randomize section */
+.randomize-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
 }
 
-.char-card.selected .char-check { opacity: 1; }
-
-/* Start section */
-.start-section {
+.player-count-row {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.count-label {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-right: 0.25rem;
+}
+
+.count-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.count-btn:hover { border-color: var(--border-accent); color: var(--text); }
+.count-btn.active { background: var(--accent); border-color: var(--accent); color: #0a0505; }
+
+.comp-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  font-size: 0.8rem;
+}
+.comp-lbl { color: var(--text-dim); margin-right: 0.25rem; }
+
+.comp-chip {
+  padding: 0.15rem 0.5rem;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  background: var(--bg);
+}
+.townsfolk-chip { border-color: #3a6aaa; color: #3a6aaa; }
+.outsider-chip  { border-color: #3a8a5a; color: #3a8a5a; }
+.minion-chip    { border-color: #aa3a5a; color: #aa3a5a; }
+.demon-chip     { border-color: #8a2020; color: #c04040; }
+
+.randomize-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
   flex-wrap: wrap;
 }
 
-.selection-summary {
+.randomize-info { font-size: 0.85rem; color: var(--text-muted); }
+.randomize-ok { color: var(--green-light); }
+
+/* Farol section */
+.farol-section {
+  background: rgba(139,26,26,0.08);
+  border: 1px solid var(--red);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.farol-tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+/* Edition filter */
+.edition-filter {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.ed-btn {
+  padding: 0.3rem 0.7rem;
+  border-radius: 99px;
+  font-size: 0.8rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
   color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ed-btn:hover { border-color: var(--border-accent); color: var(--text); }
+.ed-btn.active { background: rgba(196,136,42,0.15); border-color: var(--accent); color: var(--accent); }
+
+/* Selector grid */
+.selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 0.5rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.sel-char {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.5rem 0.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  transition: all 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.sel-char:hover { border-color: var(--accent); color: var(--text); }
+.sel-char.in-hat { background: rgba(196,136,42,0.08); border-color: var(--accent); }
+
+.sel-img {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1.5px solid var(--team-color, var(--border-accent));
+  background: var(--team-bg);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.sel-img img { width: 100%; height: 100%; object-fit: cover; }
+
+.sel-overlay {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 0.7rem;
+  color: var(--accent);
+  font-weight: bold;
+}
+
+/* Form */
+.form-group { margin-bottom: 0.85rem; }
+.form-label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.3rem; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.form-error { color: var(--red-light); font-size: 0.8rem; margin-top: 0.25rem; }
+
+.radio-group { display: flex; gap: 1rem; margin-top: 0.25rem; }
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+/* Sheet */
+.sheet-char-list { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.6rem; }
+.sheet-char { display: flex; align-items: center; gap: 0.75rem; }
+.sheet-token {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid var(--team-color, var(--border-accent));
+  background: var(--team-bg);
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.sheet-token img { width: 100%; height: 100%; object-fit: cover; }
+
+.team-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .form-row { grid-template-columns: 1fr; }
+  .action-bar { gap: 0.4rem; }
 }
 </style>
