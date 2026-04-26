@@ -1,5 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { charNamesCa } from '../data/char-names-ca';
+const charNamesCaJson = JSON.stringify(charNamesCa);
 ---
 
 <Layout title="Biblioteca" activePage="biblioteca">
@@ -38,12 +40,27 @@ import Layout from '../layouts/Layout.astro';
   </div>
 </Layout>
 
+<script id="char-names-ca-data" type="application/json" set:html={charNamesCaJson}></script>
+
 <script is:inline>
 (async function () {
-  const CDN = 'https://www.pocketgrimoire.co.uk';
+  const CDN      = 'https://www.pocketgrimoire.co.uk';
+  const WIKI_BASE = 'https://wiki.bloodontheclocktower.com/';
+  const OFFICIAL_EDITIONS = ['tb', 'bmr', 'snv'];
 
   const EDITION_LABELS = { tb: '🍺 Cerveseria', bmr: '🌙 Lluna', snv: '🌹 Sectes', custom: 'Personalitzat' };
   const TEAM_LABELS    = { townsfolk: 'Vilatà', outsider: 'Foraster', minion: 'Esbirro', demon: 'Dimoni', traveller: 'Viatger', fabled: 'Llegenda', loric: 'Lòric' };
+
+  // Catalan name map injected at build time
+  const NAMES_CA = JSON.parse(document.getElementById('char-names-ca-data').textContent);
+
+  function getNameCa(id, nameEn) {
+    return NAMES_CA[id] ?? nameEn;
+  }
+
+  function wikiUrl(nameEn) {
+    return WIKI_BASE + nameEn.replace(/\s+/g, '_').replace(/'/g, '%27');
+  }
 
   let ALL_CHARS = [];
   try {
@@ -72,7 +89,12 @@ import Layout from '../layouts/Layout.astro';
       if (filterTeam !== 'all' && c.team    !== filterTeam) return false;
       if (filterQ) {
         const q = filterQ.toLowerCase();
-        if (!c.name.toLowerCase().includes(q) && !(c.ability||'').toLowerCase().includes(q)) return false;
+        const nameCa = (NAMES_CA[c.id] || '').toLowerCase();
+        if (
+          !c.name.toLowerCase().includes(q) &&
+          !nameCa.includes(q) &&
+          !(c.ability||'').toLowerCase().includes(q)
+        ) return false;
       }
       return true;
     });
@@ -91,29 +113,45 @@ import Layout from '../layouts/Layout.astro';
     }
 
     grid.innerHTML = chars.map(c => {
-      const url = imgUrl(c.id);
+      const url       = imgUrl(c.id);
       const edLabel   = EDITION_LABELS[c.edition] || c.edition;
       const teamLabel = TEAM_LABELS[c.team] || c.team;
       const hasFirst  = c.firstNight > 0;
       const hasOther  = c.otherNight > 0;
+      const isOfficial = OFFICIAL_EDITIONS.includes(c.edition);
+      const isHomebrew = !isOfficial;
+      const nameCa    = getNameCa(c.id, c.name);
+      const nameEn    = c.name;
+      const initial   = nameCa[0].toUpperCase();
+
       return `
         <div class="lib-card team-${c.team}">
           <div class="lib-card-header">
             <div class="lib-token team-${c.team}">
               ${url
-                ? `<img src="${url}" alt="${c.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" loading="lazy"/><span class="lib-token-fallback" style="display:none">${c.name[0]}</span>`
-                : `<span class="lib-token-fallback">${c.name[0]}</span>`
+                ? `<img src="${url}" alt="${nameEn}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" loading="lazy"/>
+                   <span class="lib-token-fallback" style="display:none">${initial}</span>`
+                : `<span class="lib-token-fallback">${initial}</span>`
               }
             </div>
             <div class="lib-card-meta">
-              <h3 class="lib-char-name">${c.name}</h3>
-              <div class="lib-badges">
+              <div class="lib-name-row">
+                <h3 class="lib-char-name">${nameCa}</h3>
+                ${isOfficial
+                  ? `<a class="lib-wiki-link" href="${wikiUrl(nameEn)}" target="_blank" rel="noopener" title="Wiki oficial"
+                      onclick="event.stopPropagation()">↗</a>`
+                  : ''
+                }
+              </div>
+              <span class="lib-name-en">${nameEn}</span>
+              <div class="lib-badges" style="margin-top:.3rem">
                 <span class="badge team-${c.team}">${teamLabel}</span>
                 <span class="lib-ed-badge">${edLabel}</span>
+                ${isHomebrew ? `<span class="lib-homebrew-badge">Homebrew</span>` : ''}
               </div>
             </div>
           </div>
-          <p class="lib-ability">${c.ability || '—'}</p>
+          <p class="lib-ability">"${c.ability || '—'}"</p>
           ${hasFirst || hasOther ? `
             <div class="lib-night-flags">
               ${hasFirst ? `<span class="night-flag">🌑 Primera nit</span>` : ''}
@@ -290,6 +328,48 @@ import Layout from '../layouts/Layout.astro';
   border: 1px solid var(--border);
   border-radius: 99px;
   padding: 0.1rem 0.4rem;
+}
+
+.lib-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.lib-wiki-link {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.05rem 0.3rem;
+  line-height: 1.4;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.lib-wiki-link:hover {
+  color: var(--accent);
+  border-color: var(--border-accent);
+}
+
+.lib-name-en {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-top: 0.1rem;
+}
+
+.lib-homebrew-badge {
+  font-size: 0.65rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 99px;
+  background: rgba(106,58,170,0.15);
+  border: 1px solid #6a3aaa;
+  color: #9a6ada;
+  font-weight: 600;
+  letter-spacing: 0.03em;
 }
 
 .lib-ability {
