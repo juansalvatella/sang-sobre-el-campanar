@@ -582,6 +582,26 @@ const POCKETGRIMOIRE_CDN = 'https://www.pocketgrimoire.co.uk';
 
   // Reposition on resize
   window.addEventListener('resize', positionTokens);
+
+  // Expose all onclick-referenced functions to global scope
+  Object.assign(window, {
+    openAddTokenModal,
+    openBluffsModal,
+    clearGame,
+    openTokenModal,
+    closeTokenModal,
+    toggleDead,
+    removePlayer,
+    addReminderToPlayer,
+    removeReminder,
+    openReplaceModal,
+    closeCharPicker,
+    filterCharPicker,
+    pickChar,
+    closeBluffs,
+    toggleBluff,
+    saveNotes,
+  });
 </script>
 
 <style>

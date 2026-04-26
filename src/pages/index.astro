@@ -628,6 +628,27 @@ const teamCompJson = JSON.stringify(teamCompMap);
       hat.find(h => h.id === c.id) || c
     ).filter(Boolean));
   }
+
+  // Expose all onclick-referenced functions to global scope
+  // (Astro bundles scripts as ES modules — not global by default)
+  Object.assign(window, {
+    openCharSelector,
+    openCreateCharModal,
+    openCharSheet,
+    resetHat,
+    selectCount,
+    randomize,
+    filterEdition,
+    filterSelectorSearch,
+    closeSelectorModal,
+    closeCreateModal,
+    closeSheetModal,
+    removeFromHat,
+    removeFromHatById,
+    addCharFromSelector,
+    saveCustomChar,
+    toggleBluff,
+  });
 </script>
 
 <style>
