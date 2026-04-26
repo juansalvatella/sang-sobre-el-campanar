@@ -21,6 +21,10 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
           Dimonis de Farol
         </button>
+        <button class="sidebar-btn" id="sb-qr">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zm8-2v8h8V3h-8zm6 6h-4V5h4v4zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm13-2h-2v2h2v-2zm2 0h-2v2h2v-2zm0 2h-2v2h2v-2zm-2 2h-2v2h2v-2zm0 2h-2v2h2v-2zm2-2h-2v2h2v-2zm0-4h-2v2h2v-2z"/></svg>
+          QR Jugadors
+        </button>
         <a class="sidebar-btn" href="/ordre-de-nit">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.1 12.08c-2.33-4.51-.5-8.48.53-10.07C6.27 2.2 1.98 6.59 1.98 12c0 .14.02.28.02.42.62-.27 1.29-.42 2-.42 1.66 0 3.18.83 4.1 2.1A4.98 4.98 0 0 1 12 13c.08 0 .16.01.24.02C12.12 12.64 11.74 12.38 11.1 12.08z"/></svg>
           Ordre de Nit
@@ -87,6 +91,21 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
       <div class="modal-body">
         <input type="text" class="input" id="picker-search" placeholder="Cerca personatge..." style="margin-bottom:1rem" />
         <div id="char-picker-grid" class="char-picker-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Jugadors modal -->
+  <div id="qr-modal" class="modal-overlay" style="display:none">
+    <div class="modal" style="max-width:360px">
+      <div class="modal-header">
+        <h3>QR Jugadors</h3>
+        <button class="modal-close btn" id="close-qr">✕</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;align-items:center;gap:1rem">
+        <p style="font-size:.8rem;color:var(--text-muted);text-align:center">Els jugadors poden escanejar aquest codi per veure quins personatges hi ha a la partida.</p>
+        <div id="qr-canvas-wrap" style="background:#fff;padding:.75rem;border-radius:8px"></div>
+        <a id="qr-link" href="#" target="_blank" style="font-size:.72rem;color:var(--text-dim);word-break:break-all;text-align:center"></a>
       </div>
     </div>
   </div>
@@ -378,6 +397,37 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
       });
     });
   }
+
+  // QR Jugadors
+  let qrLibLoaded = false;
+  async function loadQrLib() {
+    if (qrLibLoaded) return;
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+      s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
+    });
+    qrLibLoaded = true;
+  }
+  document.getElementById('sb-qr').addEventListener('click', async () => {
+    const charIds = players.map(p=>p.charId).filter(Boolean);
+    if (!charIds.length) { alert('No hi ha cap jugador a la partida.'); return; }
+    const url = `${location.origin}/full?chars=${charIds.join(',')}`;
+    const wrap = document.getElementById('qr-canvas-wrap');
+    const link = document.getElementById('qr-link');
+    link.href = url; link.textContent = url;
+    wrap.innerHTML = '';
+    try {
+      await loadQrLib();
+      new QRCode(wrap, { text: url, width: 220, height: 220, colorDark: '#000', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.M });
+    } catch(_) {
+      wrap.innerHTML = `<p style="color:var(--red-light);font-size:.8rem">No s'ha pogut generar el QR. <a href="${url}" target="_blank" style="color:var(--accent)">Obre l'enllaç</a></p>`;
+    }
+    document.getElementById('qr-modal').style.display = '';
+  });
+  document.getElementById('close-qr').addEventListener('click', () => { document.getElementById('qr-modal').style.display='none'; });
+  document.getElementById('qr-modal').addEventListener('click', e => { if(e.target===e.currentTarget) e.currentTarget.style.display='none'; });
 
   // Notes
   document.getElementById('notes-area').addEventListener('input', e => { notes=e.target.value; saveGame(); });
