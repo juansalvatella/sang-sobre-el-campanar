@@ -1,7 +1,9 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { charNamesCa } from '../data/char-names-ca';
-const charNamesCaJson = JSON.stringify(charNamesCa);
+import { charAbilitiesCa } from '../data/char-abilities-ca';
+const charNamesCaJson     = JSON.stringify(charNamesCa);
+const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 ---
 
 <Layout title="Biblioteca" activePage="biblioteca">
@@ -20,6 +22,8 @@ const charNamesCaJson = JSON.stringify(charNamesCa);
         <button class="filter-btn" data-ed="tb">🍺 Cerveseria</button>
         <button class="filter-btn" data-ed="bmr">🌙 Lluna</button>
         <button class="filter-btn" data-ed="snv">🌹 Sectes</button>
+        <button class="filter-btn" data-ed="other">📖 Expansió</button>
+        <button class="filter-btn lib-paisings-btn" data-ed="custom">🐉 Paisings</button>
       </div>
       <div class="filter-group">
         <span class="filter-label">Equip:</span>
@@ -40,23 +44,35 @@ const charNamesCaJson = JSON.stringify(charNamesCa);
   </div>
 </Layout>
 
-<script id="char-names-ca-data" type="application/json" set:html={charNamesCaJson}></script>
+<script id="char-names-ca-data"     type="application/json" set:html={charNamesCaJson}></script>
+<script id="char-abilities-ca-data" type="application/json" set:html={charAbilitiesCaJson}></script>
 
 <script is:inline>
 (async function () {
   const CDN      = 'https://www.pocketgrimoire.co.uk';
   const WIKI_BASE = 'https://wiki.bloodontheclocktower.com/';
   const OFFICIAL_EDITIONS = ['tb', 'bmr', 'snv'];
+  const CHINESE_EDITIONS  = ['syyl', 'hdcs'];
 
-  const EDITION_LABELS = { tb: '🍺 Cerveseria', bmr: '🌙 Lluna', snv: '🌹 Sectes', custom: 'Personalitzat' };
-  const TEAM_LABELS    = { townsfolk: 'Vilatà', outsider: 'Foraster', minion: 'Esbirro', demon: 'Dimoni', traveller: 'Viatger', fabled: 'Llegenda', loric: 'Lòric' };
+  const EDITION_LABELS = {
+    tb:     '🍺 Cerveseria',
+    bmr:    '🌙 Lluna',
+    snv:    '🌹 Sectes',
+    '':     '📖 Expansió',
+    syyl:   '中文',
+    hdcs:   '中文',
+    custom: '🐉 Paisings',
+  };
+  const TEAM_LABELS = {
+    townsfolk: 'Vilatà', outsider: 'Foraster', minion: 'Esbirro',
+    demon: 'Dimoni', traveller: 'Viatger', fabled: 'Llegenda', loric: 'Lòric',
+  };
 
-  // Catalan name map injected at build time
-  const NAMES_CA = JSON.parse(document.getElementById('char-names-ca-data').textContent);
+  const NAMES_CA     = JSON.parse(document.getElementById('char-names-ca-data').textContent);
+  const ABILITIES_CA = JSON.parse(document.getElementById('char-abilities-ca-data').textContent);
 
-  function getNameCa(id, nameEn) {
-    return NAMES_CA[id] ?? nameEn;
-  }
+  function getNameCa(id, nameEn) { return NAMES_CA[id] ?? nameEn; }
+  function getAbilityCa(id, abilityEn) { return ABILITIES_CA[id] ?? abilityEn; }
 
   function wikiUrl(nameEn) {
     return WIKI_BASE + nameEn.replace(/\s+/g, '_').replace(/'/g, '%27');
@@ -83,26 +99,35 @@ const charNamesCaJson = JSON.stringify(charNamesCa);
     return `${CDN}/build/img/roles/${id}_g.webp`;
   }
 
+  function editionGroup(ed) {
+    if (OFFICIAL_EDITIONS.includes(ed)) return ed;
+    if (ed === 'custom') return 'custom';
+    return 'other'; // '', syyl, hdcs, etc.
+  }
+
   function filtered() {
     return ALL_CHARS.filter(c => {
-      if (filterEd   !== 'all' && c.edition !== filterEd)   return false;
-      if (filterTeam !== 'all' && c.team    !== filterTeam) return false;
+      if (filterEd !== 'all' && editionGroup(c.edition) !== filterEd) return false;
+      if (filterTeam !== 'all' && c.team !== filterTeam) return false;
       if (filterQ) {
         const q = filterQ.toLowerCase();
-        const nameCa = (NAMES_CA[c.id] || '').toLowerCase();
+        const nameCa     = (NAMES_CA[c.id] || '').toLowerCase();
+        const abilityCa  = (ABILITIES_CA[c.id] || '').toLowerCase();
         if (
           !c.name.toLowerCase().includes(q) &&
           !nameCa.includes(q) &&
-          !(c.ability||'').toLowerCase().includes(q)
+          !(c.ability||'').toLowerCase().includes(q) &&
+          !abilityCa.includes(q)
         ) return false;
       }
       return true;
     });
   }
 
+  const grid = document.getElementById('lib-grid');
+
   function render() {
     const chars = filtered();
-    const grid  = document.getElementById('lib-grid');
     const count = document.getElementById('lib-count');
 
     count.textContent = `${chars.length} personatge${chars.length !== 1 ? 's' : ''}`;
@@ -113,19 +138,22 @@ const charNamesCaJson = JSON.stringify(charNamesCa);
     }
 
     grid.innerHTML = chars.map(c => {
-      const url       = imgUrl(c.id);
-      const edLabel   = EDITION_LABELS[c.edition] || c.edition;
-      const teamLabel = TEAM_LABELS[c.team] || c.team;
-      const hasFirst  = c.firstNight > 0;
-      const hasOther  = c.otherNight > 0;
+      const url        = imgUrl(c.id);
+      const edLabel    = EDITION_LABELS[c.edition] ?? c.edition;
+      const teamLabel  = TEAM_LABELS[c.team] || c.team;
+      const hasFirst   = c.firstNight > 0;
+      const hasOther   = c.otherNight > 0;
       const isOfficial = OFFICIAL_EDITIONS.includes(c.edition);
-      const isHomebrew = !isOfficial;
-      const nameCa    = getNameCa(c.id, c.name);
-      const nameEn    = c.name;
-      const initial   = nameCa[0].toUpperCase();
+      const isChinese  = CHINESE_EDITIONS.includes(c.edition);
+      const isPaisings = c.edition === 'custom';
+      const nameCa     = getNameCa(c.id, c.name);
+      const nameEn     = c.name;
+      const abilityEn  = c.ability || '';
+      const abilityCa  = getAbilityCa(c.id, abilityEn);
+      const initial    = nameCa[0]?.toUpperCase() || '?';
 
       return `
-        <div class="lib-card team-${c.team}">
+        <div class="lib-card team-${c.team}" data-char-id="${c.id}">
           <div class="lib-card-header">
             <div class="lib-token team-${c.team}">
               ${url
@@ -147,11 +175,18 @@ const charNamesCaJson = JSON.stringify(charNamesCa);
               <div class="lib-badges" style="margin-top:.3rem">
                 <span class="badge team-${c.team}">${teamLabel}</span>
                 <span class="lib-ed-badge">${edLabel}</span>
-                ${isHomebrew ? `<span class="lib-homebrew-badge">Homebrew</span>` : ''}
+                ${isPaisings ? `<span class="lib-paisings-badge">🐉 Paisings</span>` : ''}
+                ${isChinese  ? `<span class="lib-chinese-badge">中文</span>` : ''}
               </div>
             </div>
           </div>
-          <p class="lib-ability">"${c.ability || '—'}"</p>
+          <div class="lib-ability-row">
+            <p class="lib-ability">${abilityCa ? `"${abilityCa}"` : '—'}</p>
+            ${abilityEn
+              ? `<button class="lib-lang-btn" data-lang="ca" title="Mostra en anglès">EN</button>`
+              : ''
+            }
+          </div>
           ${hasFirst || hasOther ? `
             <div class="lib-night-flags">
               ${hasFirst ? `<span class="night-flag">🌑 Primera nit</span>` : ''}
@@ -167,6 +202,32 @@ const charNamesCaJson = JSON.stringify(charNamesCa);
       `;
     }).join('');
   }
+
+  // Language toggle (event delegation on grid)
+  grid.addEventListener('click', e => {
+    const btn = e.target.closest('.lib-lang-btn');
+    if (!btn) return;
+    const card = btn.closest('.lib-card');
+    const id   = card.dataset.charId;
+    const char = ALL_CHARS.find(c => c.id === id);
+    if (!char) return;
+    const p      = card.querySelector('.lib-ability');
+    const showingCa = btn.dataset.lang === 'ca';
+    if (showingCa) {
+      p.textContent  = char.ability ? `"${char.ability}"` : '—';
+      btn.dataset.lang = 'en';
+      btn.textContent  = 'CA';
+      btn.title        = 'Mostra en català';
+      btn.classList.add('active');
+    } else {
+      const abilityCa = ABILITIES_CA[id] || char.ability || '';
+      p.textContent  = abilityCa ? `"${abilityCa}"` : '—';
+      btn.dataset.lang = 'ca';
+      btn.textContent  = 'EN';
+      btn.title        = 'Mostra en anglès';
+      btn.classList.remove('active');
+    }
+  });
 
   // Edition filter
   document.querySelectorAll('[data-ed]').forEach(btn => {
@@ -244,6 +305,7 @@ const charNamesCaJson = JSON.stringify(charNamesCa);
 .filter-btn.team-demon.active     { background: rgba(138,32,32,.2);    border-color: #8a2020; color: #c04040; }
 .filter-btn.team-traveller.active { background: rgba(138,106,32,.15);  border-color: #8a6a20; color: #c4982a; }
 .filter-btn.team-fabled.active    { background: rgba(106,58,170,.15);  border-color: #6a3aaa; color: #9a6ada; }
+.lib-paisings-btn.active          { background: rgba(106,58,170,.15);  border-color: #6a3aaa; color: #9a6ada; }
 
 .lib-search { max-width: 340px; }
 
@@ -361,7 +423,7 @@ const charNamesCaJson = JSON.stringify(charNamesCa);
   margin-top: 0.1rem;
 }
 
-.lib-homebrew-badge {
+.lib-paisings-badge {
   font-size: 0.65rem;
   padding: 0.1rem 0.4rem;
   border-radius: 99px;
@@ -372,12 +434,50 @@ const charNamesCaJson = JSON.stringify(charNamesCa);
   letter-spacing: 0.03em;
 }
 
+.lib-chinese-badge {
+  font-size: 0.65rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 99px;
+  background: rgba(196,80,40,0.12);
+  border: 1px solid #c45028;
+  color: #e07050;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* Ability row with language toggle */
+.lib-ability-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
 .lib-ability {
+  flex: 1;
   font-size: 0.82rem;
   color: var(--text-muted);
   line-height: 1.5;
   font-style: italic;
+  margin: 0;
 }
+
+.lib-lang-btn {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  margin-top: 0.1rem;
+}
+.lib-lang-btn:hover { border-color: var(--border-accent); color: var(--text); }
+.lib-lang-btn.active { background: rgba(196,136,42,.15); border-color: var(--accent); color: var(--accent); }
 
 .lib-night-flags {
   display: flex;
