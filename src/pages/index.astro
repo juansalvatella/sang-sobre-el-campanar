@@ -52,53 +52,52 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
       </div>
     </div>
 
-    <!-- Step 3: Actions -->
+    <!-- Step 3: Barret (mode + hat merged) -->
     <div class="step-card step-locked" id="step-actions">
       <div class="step-header">
         <span class="step-badge">3</span>
-        <div class="step-title">Com vols triar els personatges?</div>
+        <div style="flex:1">
+          <div class="step-title">Barret Seleccionador</div>
+        </div>
+        <span id="hat-count-badge" class="hat-count-badge"></span>
       </div>
-      <div class="mode-buttons">
-        <button class="btn btn-primary btn-lg" id="btn-randomize">🎲 Randomitzar</button>
-        <button class="btn btn-ghost btn-lg" id="btn-manual">✋ Triar Manualment</button>
-      </div>
-      <div id="randomize-info" class="step-info"></div>
-    </div>
 
-    <!-- Hat section (manual mode) -->
-    <div id="hat-section" class="step-card" style="display:none">
-      <div class="hat-section-header">
-        <div style="display:flex;align-items:center;gap:.6rem">
-          <span style="font-size:1.3rem">🎩</span>
-          <div class="step-title">Barret</div>
-          <span id="hat-count-badge" class="hat-count-badge"></span>
-        </div>
-        <div style="display:flex;gap:.4rem;align-items:center">
-          <button class="btn btn-primary btn-sm" id="btn-add-char">+ Afegir</button>
-          <button class="btn btn-ghost btn-sm" id="btn-sheet">📄 Full</button>
-          <button class="btn btn-danger btn-sm" id="btn-reset">🗑</button>
-        </div>
+      <div class="mode-bar">
+        <button class="btn btn-primary" id="btn-randomize">🎲 Randomitzar</button>
+        <button class="btn btn-ghost" id="btn-manual">✋ Triar Manualment</button>
+        <span class="mode-bar-spacer"></span>
+        <button class="btn btn-ghost btn-sm" id="btn-add-char">+ Afegir</button>
+        <button class="btn btn-ghost btn-sm" id="btn-sheet">📄 Full</button>
+        <button class="btn btn-danger btn-sm" id="btn-reset">🗑</button>
       </div>
-      <div class="hat-area">
+
+      <div class="hat-area" id="hat-area">
         <div id="hat-empty" class="hat-empty">
-          <span style="font-size:2rem">🎩</span>
-          <p>El barret és buit. Afegeix personatges amb el botó de dalt.</p>
+          <span style="font-size:1.5rem">🎩</span>
+          <p>Fes un Randomitzar o afegeix personatges manualment.</p>
         </div>
         <div id="hat-tokens" class="hat-tokens" style="display:none"></div>
       </div>
-      <div class="manual-actions">
-        <button class="btn btn-primary btn-lg" id="btn-randomize-manual" disabled>
-          🎲 Randomitzar des del Barret
-        </button>
-        <div id="manual-info" class="step-info"></div>
+
+      <div id="start-row" class="start-row">
+        <button class="btn btn-primary btn-lg" id="btn-start" disabled>Iniciar Partida →</button>
+        <div id="start-info" class="step-info"></div>
       </div>
     </div>
 
-    <!-- Farol result -->
-    <div id="farol-section" class="farol-section" style="display:none">
-      <h3 class="farol-title">🎭 Dimonis de Farol</h3>
-      <p class="farol-desc">Tres personatges que no estan en joc. El Dimoni pot fingir ser qualsevol d'aquests.</p>
-      <div id="farol-tokens" class="farol-tokens"></div>
+    <!-- Farols section (shown after starting) -->
+    <div id="farol-section" class="step-card farol-section-card" style="display:none">
+      <div class="farol-header">
+        <div>
+          <h3 class="farol-title">🎭 Dimonis de Farol</h3>
+          <p class="farol-desc">Tres personatges que el Dimoni pot usar com a coartada.</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="btn-randomize-farols">🎲 Randomitzar</button>
+      </div>
+      <div id="farol-slots" class="farol-slots"></div>
+      <div class="farol-footer">
+        <a href="/grimori" id="link-grimori" class="btn btn-primary" style="text-decoration:none;display:none">Obrir Grimori →</a>
+      </div>
     </div>
 
   </div>
@@ -111,8 +110,25 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
         <button class="modal-close btn" id="close-selector">✕</button>
       </div>
       <div class="modal-body">
-        <input type="text" class="input" id="selector-search" placeholder="Cerca per nom..." style="margin-bottom:.75rem" />
+        <div class="selector-toolbar">
+          <input type="text" class="input" id="selector-search" placeholder="Cerca per nom..." style="flex:1" />
+          <button class="btn btn-ghost btn-sm" id="btn-toggle-desc">📖 Descripcions</button>
+        </div>
         <div id="selector-grid" class="selector-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Farol picker modal -->
+  <div id="farol-picker-modal" class="modal-overlay" style="display:none">
+    <div class="modal" style="max-width:680px">
+      <div class="modal-header">
+        <h3>Canviar Farol</h3>
+        <button class="modal-close btn" id="close-farol-picker">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="text" class="input" id="farol-search" placeholder="Cerca per nom..." style="margin-bottom:.75rem" />
+        <div id="farol-picker-grid" class="selector-grid show-abilities"></div>
       </div>
     </div>
   </div>
@@ -157,7 +173,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   const TEAM_LABELS = {townsfolk:'Vilatà',outsider:'Foraster',minion:'Esbirro',demon:'Dimoni',traveller:'Viatger',fabled:'Llegenda'};
   const HIDDEN_EDITIONS = ['syyl','hdcs'];
 
-  // ── Load characters ─────────────────────────────────────────────
+  // ── Load characters ──────────────────────────────────────────────
   let ALL_CHARS = [];
   try {
     const res = await fetch('/data/characters.json');
@@ -169,6 +185,8 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   let selectedCollections = new Set();
   let hat = [];
   let lastDraw = null;
+  let showAbilities = false;
+  let editingFarolSlot = null;
 
   function loadState() {
     try {
@@ -204,6 +222,12 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     return ALL_CHARS.filter(c => selectedCollections.has(c.edition));
   }
 
+  function shuffle(arr) {
+    const a = [...arr];
+    for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+    return a;
+  }
+
   function tokenHtml(c, removable, idx) {
     const url  = imgUrl(c.id);
     const name = getNameCa(c.id, c.name);
@@ -227,7 +251,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 
   // ── Composition bar ───────────────────────────────────────────────
   function updateCompBar() {
-    const bar = document.getElementById('comp-bar');
+    const bar  = document.getElementById('comp-bar');
     const comp = playerCount && TEAM_COMP[playerCount];
     if (!comp) { bar.style.display = 'none'; return; }
     bar.style.display = '';
@@ -239,11 +263,15 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 
   // ── Hat rendering ─────────────────────────────────────────────────
   function renderHat() {
-    const empty  = document.getElementById('hat-empty');
-    const tokens = document.getElementById('hat-tokens');
-    const badge  = document.getElementById('hat-count-badge');
+    const empty    = document.getElementById('hat-empty');
+    const tokens   = document.getElementById('hat-tokens');
+    const badge    = document.getElementById('hat-count-badge');
+    const startBtn = document.getElementById('btn-start');
+    const info     = document.getElementById('start-info');
     if (!empty || !tokens) return;
+
     if (badge) badge.textContent = hat.length ? String(hat.length) : '';
+
     if (!hat.length) {
       empty.style.display  = '';
       tokens.style.display = 'none';
@@ -258,20 +286,20 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
         });
       });
     }
-    checkManualReady();
-  }
 
-  function checkManualReady() {
-    const btn  = document.getElementById('btn-randomize-manual');
-    const info = document.getElementById('manual-info');
-    if (!btn) return;
-    const enough = playerCount && hat.length >= playerCount;
-    btn.disabled = !enough;
-    if (playerCount && hat.length < playerCount) {
-      const need = playerCount - hat.length;
-      info.innerHTML = `<span style="color:var(--text-muted)">Cal ${need} personatge${need!==1?'s':''} més</span>`;
-    } else {
-      info.textContent = '';
+    // Update start button (don't touch if success message shown)
+    if (!info.querySelector('a')) {
+      if (playerCount && hat.length > 0 && hat.length < playerCount) {
+        const need = playerCount - hat.length;
+        startBtn.disabled = true;
+        info.innerHTML = `<span style="color:var(--text-muted)">Cal ${need} personatge${need!==1?'s':''} més</span>`;
+      } else if (playerCount && hat.length >= playerCount) {
+        startBtn.disabled = false;
+        info.textContent  = '';
+      } else {
+        startBtn.disabled = true;
+        info.textContent  = '';
+      }
     }
   }
 
@@ -281,7 +309,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
       document.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       playerCount = +btn.dataset.count;
-      updateCompBar(); updateSteps(); saveState(); checkManualReady();
+      updateCompBar(); updateSteps(); saveState(); renderHat();
     });
   });
 
@@ -290,74 +318,67 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     btn.addEventListener('click', () => {
       const col = btn.dataset.col;
       if (selectedCollections.has(col)) {
-        selectedCollections.delete(col);
-        btn.classList.remove('active');
+        selectedCollections.delete(col); btn.classList.remove('active');
       } else {
-        selectedCollections.add(col);
-        btn.classList.add('active');
+        selectedCollections.add(col);    btn.classList.add('active');
       }
       updateSteps(); saveState();
       if (document.getElementById('char-selector-modal').style.display !== 'none') renderSelectorGrid();
     });
   });
 
-  // ── Randomize (from full pool) ────────────────────────────────────
+  // ── Randomize: fill hat via TEAM_COMP ────────────────────────────
   document.getElementById('btn-randomize').addEventListener('click', () => {
     if (!playerCount || !selectedCollections.size) return;
-    doRandomize(collectionPool(), document.getElementById('randomize-info'));
-  });
-
-  // ── Manual mode ───────────────────────────────────────────────────
-  document.getElementById('btn-manual').addEventListener('click', () => {
-    const sec = document.getElementById('hat-section');
-    sec.style.display = '';
-    sec.scrollIntoView({behavior:'smooth', block:'start'});
-    renderHat();
-  });
-
-  document.getElementById('btn-randomize-manual').addEventListener('click', () => {
-    if (!playerCount || !hat.length) return;
-    doRandomize(hat, document.getElementById('manual-info'));
-  });
-
-  // ── Core randomize ────────────────────────────────────────────────
-  function doRandomize(pool, infoEl) {
+    const pool = collectionPool();
     const comp = TEAM_COMP[playerCount] || {townsfolk:Math.max(1,playerCount-3),outsider:0,minion:1,demon:1};
-    const shuffle = arr => { const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
     const byTeam = {
       townsfolk: shuffle(pool.filter(c=>c.team==='townsfolk')),
       outsider:  shuffle(pool.filter(c=>c.team==='outsider')),
       minion:    shuffle(pool.filter(c=>c.team==='minion')),
       demon:     shuffle(pool.filter(c=>c.team==='demon')),
     };
-
-    // Check minimums
     const missing = [];
     if (byTeam.demon.length  < comp.demon)   missing.push(`${comp.demon} dimoni${comp.demon!==1?'s':''}`);
     if (byTeam.minion.length < comp.minion)  missing.push(`${comp.minion} esbirro${comp.minion!==1?'s':''}`);
     if (missing.length) {
-      infoEl.innerHTML = `<span style="color:var(--red-light)">⚠ No hi ha prou personatges. Falten: ${missing.join(', ')}</span>`;
+      document.getElementById('start-info').innerHTML = `<span style="color:var(--red-light)">⚠ Falten: ${missing.join(', ')}</span>`;
       return;
     }
-
     let assigned = [];
     assigned.push(...byTeam.demon.slice(0, comp.demon));
     assigned.push(...byTeam.minion.slice(0, comp.minion));
     assigned.push(...byTeam.outsider.slice(0, comp.outsider));
     assigned.push(...byTeam.townsfolk.slice(0, playerCount - assigned.length));
-
-    // Fill any remaining slots if townsfolk short
     if (assigned.length < playerCount) {
       const used = new Set(assigned.map(c=>c.id));
       assigned.push(...shuffle(pool.filter(c=>!used.has(c.id))).slice(0, playerCount-assigned.length));
     }
+    hat = assigned;
+    // Clear any previous game result
+    document.getElementById('start-info').textContent = '';
+    document.getElementById('btn-start').disabled = false;
+    document.getElementById('farol-section').style.display = 'none';
+    saveState(); renderHat(); renderSelectorGrid();
+  });
 
-    const used2   = new Set(assigned.map(c=>c.id));
-    const farols  = shuffle(pool.filter(c=>!used2.has(c.id)&&(c.team==='townsfolk'||c.team==='outsider'))).slice(0,3);
-    lastDraw = {assigned, farols};
-    saveState();
+  // ── Manual: open picker ───────────────────────────────────────────
+  document.getElementById('btn-manual').addEventListener('click', () => {
+    document.getElementById('selector-search').value = '';
+    renderSelectorGrid();
+    document.getElementById('char-selector-modal').style.display = '';
+  });
 
-    const players = shuffle(assigned).map((c,i) => ({
+  // ── Iniciar Partida ───────────────────────────────────────────────
+  document.getElementById('btn-start').addEventListener('click', () => {
+    if (!playerCount || hat.length < playerCount) return;
+    const assigned = shuffle([...hat]).slice(0, playerCount);
+    const usedIds  = new Set(assigned.map(c=>c.id));
+    const farols   = shuffle(
+      collectionPool().filter(c => !usedIds.has(c.id) && (c.team==='townsfolk'||c.team==='outsider'))
+    ).slice(0, 3);
+
+    const players = assigned.map((c,i) => ({
       id: Date.now()+i,
       name: `Jugador ${i+1}`,
       charId: c.id,
@@ -366,21 +387,118 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
       customChar: c.id.startsWith('custom_') ? c : null,
     }));
     localStorage.setItem('botc_game', JSON.stringify({players, bluffs: farols.map(c=>c.id), notes:''}));
-    localStorage.setItem('botc_custom_chars', JSON.stringify(pool.filter(c=>c.id.startsWith('custom_'))));
+    localStorage.setItem('botc_custom_chars', JSON.stringify(hat.filter(c=>c.id.startsWith('custom_'))));
+    lastDraw = {assigned, farols};
+    saveState();
 
-    infoEl.innerHTML = `<span style="color:var(--green-light)">✓ ${assigned.length} personatges assignats</span><a href="/grimori" class="btn btn-primary btn-sm" style="text-decoration:none;margin-left:.75rem">Obrir Grimori →</a>`;
-    showFarols(farols, true);
-  }
+    document.getElementById('start-info').innerHTML =
+      `<span style="color:var(--green-light)">✓ ${assigned.length} personatges assignats</span>`;
+    document.getElementById('btn-start').disabled = true;
+    showFarolSection(farols);
+  });
 
-  function showFarols(farols, scroll) {
+  // ── Farols section ────────────────────────────────────────────────
+  function showFarolSection(farols) {
     const sec = document.getElementById('farol-section');
-    if (!farols.length) { sec.style.display='none'; return; }
     sec.style.display = '';
-    document.getElementById('farol-tokens').innerHTML = farols.map(c => tokenHtml(c, false, -1)).join('');
-    if (scroll) sec.scrollIntoView({behavior:'smooth', block:'nearest'});
+    renderFarolSlots(farols);
+    document.getElementById('link-grimori').style.display = '';
+    sec.scrollIntoView({behavior:'smooth', block:'nearest'});
   }
 
-  // ── Picker modal ──────────────────────────────────────────────────
+  function renderFarolSlots(farols) {
+    const container = document.getElementById('farol-slots');
+    container.innerHTML = farols.map((c, i) => {
+      const url  = imgUrl(c.id);
+      const name = getNameCa(c.id, c.name);
+      const img  = url
+        ? `<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`
+        : `<span class="custom-initial">${name[0]}</span>`;
+      return `<div class="farol-slot">
+        <div class="farol-token team-${c.team}">${img}</div>
+        <div class="farol-slot-info">
+          <div class="farol-slot-name">${name}</div>
+          <div class="farol-slot-ability">${getAbilityCa(c.id, c.ability||'')}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm farol-swap-btn" data-slot="${i}" title="Canviar">↺ Canviar</button>
+      </div>`;
+    }).join('');
+    container.querySelectorAll('.farol-swap-btn').forEach(btn => {
+      btn.addEventListener('click', () => openFarolPicker(+btn.dataset.slot));
+    });
+  }
+
+  // ── Re-randomize farols ───────────────────────────────────────────
+  document.getElementById('btn-randomize-farols').addEventListener('click', () => {
+    if (!lastDraw?.assigned) return;
+    const usedIds = new Set(lastDraw.assigned.map(c=>c.id));
+    lastDraw.farols = shuffle(
+      collectionPool().filter(c => !usedIds.has(c.id) && (c.team==='townsfolk'||c.team==='outsider'))
+    ).slice(0, 3);
+    saveState(); persistFarols(); renderFarolSlots(lastDraw.farols);
+  });
+
+  function persistFarols() {
+    try {
+      const game = JSON.parse(localStorage.getItem('botc_game') || '{}');
+      game.bluffs = (lastDraw?.farols||[]).map(c=>c.id);
+      localStorage.setItem('botc_game', JSON.stringify(game));
+    } catch(_) {}
+  }
+
+  // ── Farol picker modal ────────────────────────────────────────────
+  function openFarolPicker(slot) {
+    editingFarolSlot = slot;
+    document.getElementById('farol-search').value = '';
+    renderFarolPickerGrid();
+    document.getElementById('farol-picker-modal').style.display = '';
+  }
+
+  document.getElementById('close-farol-picker').addEventListener('click', () => {
+    document.getElementById('farol-picker-modal').style.display = 'none'; editingFarolSlot = null;
+  });
+  document.getElementById('farol-picker-modal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) { e.currentTarget.style.display='none'; editingFarolSlot=null; }
+  });
+  document.getElementById('farol-search').addEventListener('input', renderFarolPickerGrid);
+
+  function renderFarolPickerGrid() {
+    const q       = (document.getElementById('farol-search')?.value||'').toLowerCase();
+    const usedIds = new Set([
+      ...(lastDraw?.assigned||[]).map(c=>c.id),
+      ...(lastDraw?.farols||[]).filter((_,i)=>i!==editingFarolSlot).map(c=>c.id),
+    ]);
+    let chars = collectionPool().filter(c => !usedIds.has(c.id));
+    if (q) chars = chars.filter(c => getNameCa(c.id,c.name).toLowerCase().includes(q)||c.name.toLowerCase().includes(q));
+    const grid = document.getElementById('farol-picker-grid');
+    if (!grid) return;
+    if (!chars.length) { grid.innerHTML='<p style="color:var(--text-muted);text-align:center;padding:2rem">Cap resultat.</p>'; return; }
+    grid.innerHTML = chars.map(c => {
+      const url  = imgUrl(c.id);
+      const name = getNameCa(c.id, c.name);
+      return `<button class="sel-char team-${c.team}" data-id="${c.id}">
+        <div class="sel-img team-${c.team}">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${name[0]}</span>`}</div>
+        <div class="sel-char-info">
+          <span class="sel-name">${name}</span>
+          <span class="sel-ability">${getAbilityCa(c.id, c.ability||'')}</span>
+        </div>
+        <div class="sel-overlay">+</div>
+      </button>`;
+    }).join('');
+    grid.querySelectorAll('.sel-char').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const char = ALL_CHARS.find(c=>c.id===btn.dataset.id);
+        if (char && lastDraw?.farols && editingFarolSlot !== null) {
+          lastDraw.farols[editingFarolSlot] = char;
+          saveState(); persistFarols(); renderFarolSlots(lastDraw.farols);
+        }
+        document.getElementById('farol-picker-modal').style.display='none';
+        editingFarolSlot = null;
+      });
+    });
+  }
+
+  // ── Character picker modal ────────────────────────────────────────
   document.getElementById('btn-add-char').addEventListener('click', () => {
     document.getElementById('selector-search').value = '';
     renderSelectorGrid();
@@ -394,11 +512,18 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   });
   document.getElementById('selector-search').addEventListener('input', renderSelectorGrid);
 
+  document.getElementById('btn-toggle-desc').addEventListener('click', () => {
+    showAbilities = !showAbilities;
+    document.getElementById('btn-toggle-desc').classList.toggle('active', showAbilities);
+    document.getElementById('selector-grid').classList.toggle('show-abilities', showAbilities);
+    renderSelectorGrid();
+  });
+
   function renderSelectorGrid() {
     const q     = (document.getElementById('selector-search')?.value||'').toLowerCase();
     const inHat = new Set(hat.map(c=>c.id));
     let chars   = collectionPool();
-    if (q) chars = chars.filter(c => getNameCa(c.id,c.name).toLowerCase().includes(q) || c.name.toLowerCase().includes(q));
+    if (q) chars = chars.filter(c => getNameCa(c.id,c.name).toLowerCase().includes(q)||c.name.toLowerCase().includes(q));
     const grid = document.getElementById('selector-grid');
     if (!grid) return;
     if (!chars.length) { grid.innerHTML='<p style="color:var(--text-muted);text-align:center;padding:2rem">Cap resultat.</p>'; return; }
@@ -408,7 +533,10 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
       const name = getNameCa(c.id, c.name);
       return `<button class="sel-char ${inH?'in-hat':''} team-${c.team}" data-id="${c.id}">
         <div class="sel-img team-${c.team}">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${name[0]}</span>`}</div>
-        <span>${name}</span>
+        <div class="sel-char-info">
+          <span class="sel-name">${name}</span>
+          <span class="sel-ability">${getAbilityCa(c.id, c.ability||'')}</span>
+        </div>
         <div class="sel-overlay">${inH?'✓':'+'}</div>
       </button>`;
     }).join('');
@@ -442,13 +570,18 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
       content.innerHTML = ['townsfolk','outsider','minion','demon','traveller','fabled']
         .filter(t=>byTeam[t]?.length)
         .map(team => `<div style="margin-bottom:1.25rem">
-          <h4 style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem"><span class="badge team-${team}">${TEAM_LABELS[team]||team}</span></h4>
+          <h4 style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+            <span class="badge team-${team}">${TEAM_LABELS[team]||team}</span>
+          </h4>
           <div class="sheet-char-list">${byTeam[team].map(c => {
             const url  = imgUrl(c.id);
             const name = getNameCa(c.id, c.name);
             return `<div class="sheet-char">
               <div class="sheet-token team-${c.team}">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${name[0]}</span>`}</div>
-              <div><div style="font-size:.9rem;font-weight:600">${name}</div><div style="font-size:.78rem;color:var(--text-muted)">${getAbilityCa(c.id,c.ability||'')}</div></div>
+              <div>
+                <div style="font-size:.9rem;font-weight:600">${name}</div>
+                <div style="font-size:.78rem;color:var(--text-muted)">${getAbilityCa(c.id,c.ability||'')}</div>
+              </div>
             </div>`;
           }).join('')}</div>
         </div>`).join('');
@@ -469,7 +602,8 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     saveState();
     localStorage.removeItem('botc_game');
     document.getElementById('farol-section').style.display = 'none';
-    document.getElementById('randomize-info').textContent  = '';
+    document.getElementById('start-info').textContent = '';
+    document.getElementById('btn-start').disabled = true;
     renderHat();
   });
 
@@ -487,18 +621,18 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   });
   updateSteps();
 
-  if (hat.length > 0) {
-    document.getElementById('hat-section').style.display = '';
-    renderHat();
-  }
+  if (hat.length > 0) renderHat();
+
   if (lastDraw?.farols?.length) {
-    showFarols(lastDraw.farols, false);
-    const infoEl = hat.length > 0
-      ? document.getElementById('manual-info')
-      : document.getElementById('randomize-info');
+    document.getElementById('farol-section').style.display = '';
+    renderFarolSlots(lastDraw.farols);
+    document.getElementById('link-grimori').style.display = '';
     if (lastDraw.assigned?.length) {
-      infoEl.innerHTML = `<span style="color:var(--green-light)">✓ ${lastDraw.assigned.length} personatges assignats</span><a href="/grimori" class="btn btn-primary btn-sm" style="text-decoration:none;margin-left:.75rem">Obrir Grimori →</a>`;
+      document.getElementById('start-info').innerHTML =
+        `<span style="color:var(--green-light)">✓ ${lastDraw.assigned.length} personatges assignats</span>`;
+      document.getElementById('btn-start').disabled = true;
     }
+    renderHat();
   }
 })();
 </script>
@@ -530,16 +664,12 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 }
 
 .step-badge {
-  width: 26px;
-  height: 26px;
+  width: 26px; height: 26px;
   border-radius: 50%;
   background: var(--accent);
   color: #0a0505;
-  font-size: .78rem;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: .78rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
 
@@ -550,16 +680,10 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   font-weight: 600;
 }
 
-.step-desc {
-  font-size: .78rem;
-  color: var(--text-dim);
-  margin-top: .15rem;
-}
+.step-desc { font-size: .78rem; color: var(--text-dim); margin-top: .15rem; }
 
 .step-info {
   font-size: .85rem;
-  color: var(--text-muted);
-  margin-top: .75rem;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -567,36 +691,23 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 }
 
 /* ── Player count ───────────────────────────────────────────────── */
-.player-count-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .45rem;
-  margin-bottom: .75rem;
-}
+.player-count-row { display: flex; flex-wrap: wrap; gap: .45rem; margin-bottom: .75rem; }
 
 .count-btn {
-  width: 40px;
-  height: 40px;
+  width: 40px; height: 40px;
   border-radius: 50%;
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text-muted);
-  font-size: .85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all .15s;
+  font-size: .85rem; font-weight: 600;
+  cursor: pointer; transition: all .15s;
 }
 .count-btn:hover { border-color: var(--border-accent); color: var(--text); }
 .count-btn.active { background: var(--accent); border-color: var(--accent); color: #0a0505; }
 
 .comp-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .35rem;
-  align-items: center;
-  padding-top: .5rem;
-  border-top: 1px solid var(--border);
-  margin-top: .5rem;
+  display: flex; flex-wrap: wrap; gap: .35rem; align-items: center;
+  padding-top: .5rem; border-top: 1px solid var(--border); margin-top: .5rem;
 }
 .comp-lbl { font-size: .78rem; color: var(--text-dim); margin-right: .1rem; }
 .comp-chip { padding: .15rem .5rem; border-radius: 99px; font-size: .73rem; border: 1px solid; }
@@ -606,146 +717,159 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 .demon-chip     { border-color: #e04848; color: #e04848; }
 
 /* ── Collection toggles ─────────────────────────────────────────── */
-.collection-toggles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .5rem;
-}
+.collection-toggles { display: flex; flex-wrap: wrap; gap: .5rem; }
 
 .col-btn {
-  padding: .4rem .9rem;
-  border-radius: 99px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text-muted);
-  font-size: .85rem;
-  cursor: pointer;
-  transition: all .15s;
+  padding: .4rem .9rem; border-radius: 99px;
+  border: 1px solid var(--border); background: var(--bg);
+  color: var(--text-muted); font-size: .85rem;
+  cursor: pointer; transition: all .15s;
 }
 .col-btn:hover { border-color: var(--border-accent); color: var(--text); }
 .col-btn.active {
-  background: rgba(196,136,42,.15);
-  border-color: var(--accent);
-  color: var(--accent);
-  font-weight: 600;
+  background: rgba(196,136,42,.15); border-color: var(--accent);
+  color: var(--accent); font-weight: 600;
 }
 
-/* ── Mode buttons ───────────────────────────────────────────────── */
-.mode-buttons {
+/* ── Mode bar (step 3) ──────────────────────────────────────────── */
+.mode-bar {
   display: flex;
-  gap: .75rem;
-  flex-wrap: wrap;
-}
-
-/* ── Hat section ────────────────────────────────────────────────── */
-.hat-section-header {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
   margin-bottom: 1rem;
 }
+.mode-bar-spacer { flex: 1; min-width: .5rem; }
 
-.hat-count-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  border-radius: 99px;
-  background: var(--accent);
-  color: #0a0505;
-  font-size: .7rem;
-  font-weight: 700;
-}
-
+/* ── Hat area ───────────────────────────────────────────────────── */
 .hat-area {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  min-height: 100px;
+  min-height: 88px;
   padding: .75rem;
   margin-bottom: 1rem;
 }
 
+.hat-count-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 20px; padding: 0 5px;
+  border-radius: 99px; background: var(--accent);
+  color: #0a0505; font-size: .7rem; font-weight: 700;
+}
+
 .hat-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: .4rem;
-  min-height: 80px;
-  color: var(--text-muted);
-  font-size: .85rem;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: .4rem; min-height: 60px;
+  color: var(--text-muted); font-size: .85rem;
 }
 
 .hat-tokens { display: flex; flex-wrap: wrap; gap: .6rem; }
 
-.hat-item { position: relative; display: flex; flex-direction: column; align-items: center; gap: .25rem; }
+.hat-item {
+  position: relative;
+  display: flex; flex-direction: column;
+  align-items: center; gap: .25rem;
+}
 
 .hat-token {
-  width: 60px;
-  height: 60px;
+  width: 60px; height: 60px;
   border-radius: 50%;
   border: 2px solid var(--team-color, var(--border-accent));
   background: var(--team-bg, rgba(196,136,42,.1));
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
 }
 .hat-token img { width: 100%; height: 100%; object-fit: cover; }
 .custom-initial { font-size: 1.3rem; font-weight: bold; color: var(--text-muted); }
 
 .hat-token-label {
-  font-size: .6rem;
-  color: var(--text-dim);
-  text-align: center;
-  max-width: 64px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: .6rem; color: var(--text-dim);
+  text-align: center; max-width: 64px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
 .hat-remove-btn {
-  position: absolute;
-  top: -3px;
-  right: -3px;
-  width: 17px;
-  height: 17px;
-  border-radius: 50%;
-  background: var(--red);
-  color: #fff;
-  font-size: .55rem;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  cursor: pointer;
-  z-index: 5;
+  position: absolute; top: -3px; right: -3px;
+  width: 17px; height: 17px; border-radius: 50%;
+  background: var(--red); color: #fff; font-size: .55rem;
+  display: none; align-items: center; justify-content: center;
+  border: none; cursor: pointer; z-index: 5;
 }
 .hat-item:hover .hat-remove-btn { display: flex; }
 
-.manual-actions {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
+/* ── Start row ──────────────────────────────────────────────────── */
+.start-row {
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  padding-top: 1rem; border-top: 1px solid var(--border);
 }
 
-/* ── Farols ─────────────────────────────────────────────────────── */
-.farol-section {
-  background: rgba(139,26,26,.08);
-  border: 1px solid var(--red);
-  border-radius: var(--radius);
-  padding: 1.25rem 1.5rem;
+/* ── Farols section ─────────────────────────────────────────────── */
+.farol-section-card {
+  background: rgba(139,26,26,.06);
+  border-color: rgba(220,50,50,.35);
+}
+
+.farol-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 1rem;
   margin-bottom: 1rem;
 }
-.farol-title { font-family: var(--font-serif); font-size: 1rem; color: var(--accent); margin-bottom: .25rem; }
-.farol-desc  { font-size: .82rem; color: var(--text-muted); margin-bottom: .75rem; }
-.farol-tokens { display: flex; flex-wrap: wrap; gap: 1rem; }
+.farol-title {
+  font-family: var(--font-serif); font-size: 1rem;
+  color: var(--accent); margin-bottom: .2rem;
+}
+.farol-desc { font-size: .8rem; color: var(--text-muted); }
 
-/* ── Character picker grid ──────────────────────────────────────── */
+.farol-slots {
+  display: flex; flex-direction: column; gap: .5rem;
+  margin-bottom: 1rem;
+}
+
+.farol-slot {
+  display: flex; align-items: center; gap: .85rem;
+  padding: .6rem .75rem;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.farol-token {
+  width: 48px; height: 48px; flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid var(--team-color, var(--border-accent));
+  background: var(--team-bg, rgba(196,136,42,.1));
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.farol-token img { width: 100%; height: 100%; object-fit: cover; }
+
+.farol-slot-info { flex: 1; min-width: 0; }
+.farol-slot-name {
+  font-size: .9rem; font-weight: 600;
+  font-family: var(--font-serif); color: var(--text);
+  margin-bottom: .15rem;
+}
+.farol-slot-ability {
+  font-size: .75rem; color: var(--text-muted);
+  font-style: italic; line-height: 1.4;
+}
+
+.farol-footer { display: flex; gap: 1rem; align-items: center; }
+
+/* ── Character picker ───────────────────────────────────────────── */
+.selector-toolbar {
+  display: flex; gap: .5rem; align-items: center;
+  margin-bottom: .75rem;
+}
+
+.btn-toggle-desc-active,
+#btn-toggle-desc.active {
+  background: rgba(196,136,42,.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .selector-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
@@ -754,39 +878,66 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   overflow-y: auto;
 }
 
-.sel-char {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* List mode with descriptions */
+.selector-grid.show-abilities {
+  grid-template-columns: 1fr;
   gap: .3rem;
-  padding: .5rem .25rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+}
+
+.sel-char {
+  display: flex; flex-direction: column; align-items: center;
+  gap: .3rem; padding: .5rem .25rem;
+  background: var(--bg-card); border: 1px solid var(--border);
   border-radius: var(--radius);
-  cursor: pointer;
-  font-size: .65rem;
-  color: var(--text-muted);
-  transition: all .15s;
-  position: relative;
+  cursor: pointer; font-size: .65rem; color: var(--text-muted);
+  transition: all .15s; position: relative;
 }
 .sel-char:hover { border-color: var(--accent); color: var(--text); }
 .sel-char.in-hat { background: rgba(196,136,42,.08); border-color: var(--accent); }
 
+/* List mode overrides */
+.show-abilities .sel-char {
+  flex-direction: row; align-items: center;
+  text-align: left; padding: .5rem .75rem; gap: .75rem;
+}
+
 .sel-img {
-  width: 46px;
-  height: 46px;
+  width: 46px; height: 46px; flex-shrink: 0;
   border-radius: 50%;
   border: 1.5px solid var(--team-color, var(--border-accent));
   background: var(--team-bg);
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: .75rem;
-  color: var(--text-muted);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .75rem; color: var(--text-muted);
 }
 .sel-img img { width: 100%; height: 100%; object-fit: cover; }
-.sel-overlay { position: absolute; top: 2px; right: 4px; font-size: .7rem; color: var(--accent); font-weight: bold; }
+
+/* Icon mode: char-info is transparent, children stack inside flex col */
+.sel-char-info { display: contents; }
+
+/* List mode: char-info becomes a real column container */
+.show-abilities .sel-char-info {
+  display: flex; flex-direction: column; flex: 1; min-width: 0;
+}
+
+.sel-name { font-size: .65rem; }
+.show-abilities .sel-name {
+  font-size: .85rem; font-weight: 600; color: var(--text);
+}
+
+.sel-ability { display: none; }
+.show-abilities .sel-ability {
+  display: block;
+  font-size: .73rem; color: var(--text-dim);
+  font-style: italic; line-height: 1.35;
+  margin-top: .1rem;
+}
+
+.sel-overlay {
+  position: absolute; top: 2px; right: 4px;
+  font-size: .7rem; color: var(--accent); font-weight: bold;
+}
+.show-abilities .sel-overlay { position: static; flex-shrink: 0; }
 
 /* ── Sheet ──────────────────────────────────────────────────────── */
 .sheet-char-list { display: flex; flex-direction: column; gap: .6rem; margin-top: .6rem; }
@@ -794,8 +945,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 .sheet-token {
   width: 40px; height: 40px; border-radius: 50%;
   border: 1.5px solid var(--team-color, var(--border-accent));
-  background: var(--team-bg);
-  overflow: hidden; flex-shrink: 0;
+  background: var(--team-bg); overflow: hidden; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   font-size: .9rem; color: var(--text-muted);
 }
@@ -805,8 +955,8 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 .btn-sm { padding: .25rem .5rem; font-size: .75rem; }
 
 @media (max-width: 640px) {
-  .mode-buttons { flex-direction: column; }
-  .mode-buttons .btn { width: 100%; }
-  .hat-section-header { flex-direction: column; align-items: flex-start; gap: .6rem; }
+  .mode-bar { gap: .4rem; }
+  .mode-bar-spacer { display: none; }
+  .farol-header { flex-direction: column; }
 }
 </style>
