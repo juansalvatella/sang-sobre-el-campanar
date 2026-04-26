@@ -1,6 +1,10 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { ca } from '../i18n/ca';
+import { charNamesCa } from '../data/char-names-ca';
+import { charAbilitiesCa } from '../data/char-abilities-ca';
+const charNamesCaJson     = JSON.stringify(charNamesCa);
+const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 ---
 
 <Layout title={ca.grimoire.title} activePage="grimoire">
@@ -105,9 +109,16 @@ import { ca } from '../i18n/ca';
   </div>
 </Layout>
 
+<script id="char-names-ca-data"     type="application/json" set:html={charNamesCaJson}></script>
+<script id="char-abilities-ca-data" type="application/json" set:html={charAbilitiesCaJson}></script>
+
 <script is:inline>
 (async function () {
   const CDN = 'https://www.pocketgrimoire.co.uk';
+  const NAMES_CA     = JSON.parse(document.getElementById('char-names-ca-data').textContent);
+  const ABILITIES_CA = JSON.parse(document.getElementById('char-abilities-ca-data').textContent);
+  function getNameCa(id, nameEn)     { return NAMES_CA[id]     ?? nameEn; }
+  function getAbilityCa(id, abilityEn) { return ABILITIES_CA[id] ?? abilityEn; }
   const TEAM_LABELS = {townsfolk:'Habitants',outsider:'Forasters',minion:'Servents',demon:'Dimonis',traveller:'Viatgers',fabled:'Llegendes'};
 
   let ALL_CHARS = [];
@@ -161,7 +172,7 @@ import { ca } from '../i18n/ca';
         ${url ? `<img src="${url}" alt="${char.name}" onerror="this.style.display='none'" loading="lazy"/>` : `<span class="token-placeholder">${i+1}</span>`}
         ${p.dead ? '<div class="dead-shroud">†</div>' : ''}
         <div class="token-label">${p.name||`J${i+1}`}</div>
-        ${char ? `<div class="token-char-name">${char.name}</div>` : ''}
+        ${char ? `<div class="token-char-name">${getNameCa(char.id, char.name)}</div>` : ''}
       </div>`;
     }).join('')}</div>`;
     circle.querySelectorAll('.circle-token').forEach(el => {
@@ -200,7 +211,7 @@ import { ca } from '../i18n/ca';
         </div>
         <div class="player-info">
           <span class="player-name">${p.name||`Jugador ${i+1}`}</span>
-          ${char ? `<span class="player-char">${char.name}</span>` : ''}
+          ${char ? `<span class="player-char">${getNameCa(char.id, char.name)}</span>` : ''}
         </div>
         ${p.dead ? '<span class="dead-badge">†</span>' : ''}
       </div>`;
@@ -215,8 +226,8 @@ import { ca } from '../i18n/ca';
     activeIdx = idx;
     const p = players[idx];
     const char = p.charId ? charById(p.charId) : null;
-    document.getElementById('modal-char-name').textContent = char ? char.name : `Jugador ${idx+1}`;
-    document.getElementById('modal-char-ability').textContent = char?.ability || '';
+    document.getElementById('modal-char-name').textContent = char ? getNameCa(char.id, char.name) : `Jugador ${idx+1}`;
+    document.getElementById('modal-char-ability').textContent = char ? getAbilityCa(char.id, char.ability||'') : '';
     const teamEl = document.getElementById('modal-char-team');
     teamEl.textContent = char ? (TEAM_LABELS[char.team]||char.team) : '';
     teamEl.className = `badge team-${char?.team||'townsfolk'}`;
@@ -299,14 +310,14 @@ import { ca } from '../i18n/ca';
   function renderPickerGrid(q) {
     const inUse = new Set(players.map(p=>p.charId).filter(Boolean));
     let chars = selectedSetupChars.length ? ALL_CHARS.filter(c=>selectedSetupChars.includes(c.id)) : ALL_CHARS.filter(c=>['tb','bmr','snv'].includes(c.edition)||c.id.startsWith('custom_'));
-    if (q) chars = chars.filter(c=>c.name.toLowerCase().includes(q));
+    if (q) chars = chars.filter(c=>c.name.toLowerCase().includes(q) || getNameCa(c.id, c.name).toLowerCase().includes(q));
     const grid = document.getElementById('char-picker-grid');
     if (!chars.length) { grid.innerHTML='<p style="color:var(--text-muted);text-align:center;padding:2rem">Cap resultat.</p>'; return; }
     grid.innerHTML = chars.map(c => {
       const url = imgUrl(c.id);
       return `<button class="picker-char ${inUse.has(c.id)?'in-use':''} team-${c.team}" data-id="${c.id}" title="${c.ability||''}">
-        <div class="picker-img team-${c.team}">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${c.name[0]}</span>`}</div>
-        <span>${c.name}</span>
+        <div class="picker-img team-${c.team}">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${getNameCa(c.id, c.name)[0]}</span>`}</div>
+        <span>${getNameCa(c.id, c.name)}</span>
         ${inUse.has(c.id)?'<span class="in-use-badge">·</span>':''}
       </button>`;
     }).join('');
@@ -339,8 +350,8 @@ import { ca } from '../i18n/ca';
       activeEl.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:.75rem;margin-bottom:.5rem">${farolChars.map(c => {
         const url = imgUrl(c.id);
         return `<div style="display:flex;flex-direction:column;align-items:center;gap:.3rem">
-          <div class="picker-img team-${c.team}" style="width:52px;height:52px">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${c.name[0]}</span>`}</div>
-          <span style="font-size:.7rem;color:var(--accent)">${c.name}</span>
+          <div class="picker-img team-${c.team}" style="width:52px;height:52px">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${getNameCa(c.id, c.name)[0]}</span>`}</div>
+          <span style="font-size:.7rem;color:var(--accent)">${getNameCa(c.id, c.name)}</span>
         </div>`;
       }).join('')}</div>`;
     } else {
@@ -353,8 +364,8 @@ import { ca } from '../i18n/ca';
     grid.innerHTML = chars.map(c => {
       const url = imgUrl(c.id);
       return `<button class="picker-char ${bluffs.includes(c.id)?'bluff-selected':''} team-${c.team}" data-id="${c.id}" title="${c.ability||''}">
-        <div class="picker-img team-${c.team}">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${c.name[0]}</span>`}</div>
-        <span>${c.name}</span>
+        <div class="picker-img team-${c.team}">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${getNameCa(c.id, c.name)[0]}</span>`}</div>
+        <span>${getNameCa(c.id, c.name)}</span>
         ${bluffs.includes(c.id)?'<span class="bluff-badge">🎭</span>':''}
       </button>`;
     }).join('');

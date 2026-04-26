@@ -1,6 +1,10 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { ca } from '../i18n/ca';
+import { charNamesCa } from '../data/char-names-ca';
+import { charAbilitiesCa } from '../data/char-abilities-ca';
+const charNamesCaJson     = JSON.stringify(charNamesCa);
+const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 ---
 
 <Layout title={ca.night.title} activePage="nightOrder">
@@ -64,9 +68,16 @@ import { ca } from '../i18n/ca';
   </div>
 </Layout>
 
+<script id="char-names-ca-data"     type="application/json" set:html={charNamesCaJson}></script>
+<script id="char-abilities-ca-data" type="application/json" set:html={charAbilitiesCaJson}></script>
+
 <script is:inline>
 (async function () {
   const CDN = 'https://www.pocketgrimoire.co.uk';
+  const NAMES_CA     = JSON.parse(document.getElementById('char-names-ca-data').textContent);
+  const ABILITIES_CA = JSON.parse(document.getElementById('char-abilities-ca-data').textContent);
+  function getNameCa(id, nameEn)     { return NAMES_CA[id]     ?? nameEn; }
+  function getAbilityCa(id, abilityEn) { return ABILITIES_CA[id] ?? abilityEn; }
 
   let ALL_CHARS = [];
   try {
@@ -97,10 +108,10 @@ import { ca } from '../i18n/ca';
     return `<div class="night-row team-${char.team} fade-in">
       <div class="night-row-num">${n}</div>
       <div class="night-row-token team-${char.team}">
-        ${url ? `<img src="${url}" alt="${char.name}" onerror="this.style.display='none'" loading="lazy"/>` : `<span style="font-size:.7rem">${char.name[0]}</span>`}
+        ${url ? `<img src="${url}" alt="${char.name}" onerror="this.style.display='none'" loading="lazy"/>` : `<span style="font-size:.7rem">${getNameCa(char.id, char.name)[0]}</span>`}
       </div>
       <div class="night-row-content">
-        <div class="night-row-name">${char.name}</div>
+        <div class="night-row-name">${getNameCa(char.id, char.name)}</div>
         <div class="night-row-reminder">${reminder||'—'}</div>
       </div>
     </div>`;
