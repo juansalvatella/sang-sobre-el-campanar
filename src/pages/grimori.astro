@@ -1,256 +1,172 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { ca } from '../i18n/ca';
-import charactersRaw from '../data/characters.json';
-
-type Character = {
-  id: string;
-  name: string;
-  edition: string;
-  team: string;
-  firstNight: number;
-  firstNightReminder: string;
-  otherNight: number;
-  otherNightReminder: string;
-  reminders: string[];
-  setup: boolean;
-  ability: string;
-  image: string;
-};
-
-const characters = charactersRaw as Character[];
-const charactersJson = JSON.stringify(characters);
-const POCKETGRIMOIRE_CDN = 'https://www.pocketgrimoire.co.uk';
 ---
 
 <Layout title={ca.grimoire.title} activePage="grimoire">
   <div class="grimoire-page">
 
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar">
       <div class="sidebar-section">
         <h3 class="sidebar-title">Partida</h3>
-        <button class="sidebar-btn" onclick="openAddTokenModal()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 14-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
+        <button class="sidebar-btn" id="sb-add-player">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
           Afegeix Jugador
         </button>
-        <button class="sidebar-btn" onclick="openBluffsModal()">
+        <button class="sidebar-btn" id="sb-farols">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
           Dimonis de Farol
         </button>
-        <button class="sidebar-btn" onclick="window.location.href='/ordre-de-nit'">
+        <a class="sidebar-btn" href="/ordre-de-nit">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.1 12.08c-2.33-4.51-.5-8.48.53-10.07C6.27 2.2 1.98 6.59 1.98 12c0 .14.02.28.02.42.62-.27 1.29-.42 2-.42 1.66 0 3.18.83 4.1 2.1A4.98 4.98 0 0 1 12 13c.08 0 .16.01.24.02C12.12 12.64 11.74 12.38 11.1 12.08z"/></svg>
-          {ca.grimoire.nightOrder}
-        </button>
-        <button class="sidebar-btn danger" onclick="clearGame()">
+          Ordre de Nit
+        </a>
+        <button class="sidebar-btn danger" id="sb-clear">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
           Nova Partida
         </button>
       </div>
-
       <div class="sidebar-section">
         <h3 class="sidebar-title">Jugadors</h3>
-        <div id="player-list" class="player-list"></div>
+        <div id="player-list"></div>
       </div>
-
       <div class="sidebar-section">
         <h3 class="sidebar-title">Notes</h3>
-        <textarea
-          id="notes-area"
-          class="notes-input"
-          placeholder={ca.notes.placeholder}
-          oninput="saveNotes(this.value)"
-        ></textarea>
+        <textarea id="notes-area" class="notes-input" placeholder="Escriu les teves notes aquí..."></textarea>
       </div>
     </aside>
 
-    <!-- Main grimoire area -->
     <div class="grimoire-main">
       <div id="empty-state" class="empty-state" style="display:none">
         <div class="empty-state-icon">📖</div>
         <p>No hi ha cap partida activa.</p>
-        <p style="font-size:0.85rem; margin-top:0.25rem">Afegeix jugadors al panel lateral o torna a la configuració.</p>
-        <a href="/" class="btn btn-primary" style="margin-top:1.5rem; text-decoration:none">
-          Anar a Configuració
-        </a>
+        <p style="font-size:.85rem;margin-top:.25rem">Afegeix jugadors o torna a la configuració.</p>
+        <a href="/" class="btn btn-primary" style="margin-top:1.5rem;text-decoration:none">Anar a Configuració</a>
       </div>
-
-      <!-- Token circle -->
-      <div id="grimoire-circle" class="grimoire-circle">
-        <!-- tokens injected by JS -->
-      </div>
-
-      <!-- Reminder tokens floating -->
-      <div id="reminder-area" class="reminder-area"></div>
+      <div id="grimoire-circle" class="grimoire-circle"></div>
     </div>
   </div>
 
   <!-- Token action modal -->
-  <div id="token-modal" class="modal-overlay" style="display:none" onclick="closeTokenModal(event)">
-    <div class="modal" onclick="event.stopPropagation()">
+  <div id="token-modal" class="modal-overlay" style="display:none">
+    <div class="modal">
       <div class="modal-header">
-        <div style="display:flex;align-items:center;gap:0.75rem">
+        <div style="display:flex;align-items:center;gap:.75rem">
           <div id="modal-token-img" class="modal-token"></div>
           <div>
             <h3 id="modal-char-name"></h3>
-            <div id="modal-char-team" class="badge" style="margin-top:0.25rem"></div>
+            <div id="modal-char-team" class="badge" style="margin-top:.25rem"></div>
           </div>
         </div>
-        <button class="modal-close btn" onclick="closeTokenModal()">✕</button>
+        <button class="modal-close btn" id="close-token-modal">✕</button>
       </div>
       <div class="modal-body">
-        <p id="modal-char-ability" style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem; font-style:italic"></p>
+        <p id="modal-char-ability" style="color:var(--text-muted);font-size:.85rem;margin-bottom:1rem;font-style:italic"></p>
         <div class="modal-actions">
-          <button class="modal-action-btn" onclick="toggleDead()">
-            <span id="dead-label">Emmortallar</span>
-          </button>
-          <button class="modal-action-btn" onclick="openReplaceModal()">
-            Substituir
-          </button>
-          <button class="modal-action-btn" onclick="addReminderToPlayer()">
-            Recordatori
-          </button>
-          <button class="modal-action-btn danger" onclick="removePlayer()">
-            Eliminar
-          </button>
+          <button class="modal-action-btn" id="btn-toggle-dead"></button>
+          <button class="modal-action-btn" id="btn-replace">Substituir</button>
+          <button class="modal-action-btn" id="btn-add-reminder">Recordatori</button>
+          <button class="modal-action-btn danger" id="btn-remove-player">Eliminar</button>
         </div>
         <div id="reminders-display" style="margin-top:1rem"></div>
       </div>
     </div>
   </div>
 
-  <!-- Add player / replace modal -->
-  <div id="char-picker-modal" class="modal-overlay" style="display:none" onclick="closeCharPicker(event)">
-    <div class="modal" style="max-width:680px" onclick="event.stopPropagation()">
+  <!-- Character picker -->
+  <div id="char-picker-modal" class="modal-overlay" style="display:none">
+    <div class="modal" style="max-width:680px">
       <div class="modal-header">
         <h3 id="picker-title">Selecciona Personatge</h3>
-        <button class="modal-close btn" onclick="closeCharPicker()">✕</button>
+        <button class="modal-close btn" id="close-picker">✕</button>
       </div>
       <div class="modal-body">
-        <input
-          type="text"
-          class="input"
-          placeholder="Cerca personatge..."
-          id="char-search"
-          oninput="filterCharPicker(this.value)"
-          style="margin-bottom:1rem"
-        />
+        <input type="text" class="input" id="picker-search" placeholder="Cerca personatge..." style="margin-bottom:1rem" />
         <div id="char-picker-grid" class="char-picker-grid"></div>
       </div>
     </div>
   </div>
 
-  <!-- Dimonis de Farol modal -->
-  <div id="bluffs-modal" class="modal-overlay" style="display:none" onclick="closeBluffs(event)">
-    <div class="modal" style="max-width:680px" onclick="event.stopPropagation()">
+  <!-- Dimonis de farol modal -->
+  <div id="farols-modal" class="modal-overlay" style="display:none">
+    <div class="modal" style="max-width:680px">
       <div class="modal-header">
         <h3>🎭 Dimonis de Farol</h3>
-        <button class="modal-close btn" onclick="closeBluffs()">✕</button>
+        <button class="modal-close btn" id="close-farols">✕</button>
       </div>
       <div class="modal-body">
-        <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem">
-          Personatges que el Dimoni pot fer servir com a farol. Seleccionats automàticament al randomitzar, o tria manualment.
-        </p>
-        <div id="farol-active" class="farol-active-display"></div>
+        <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1rem">Personatges que el Dimoni pot fer servir com a farol.</p>
+        <div id="farol-active-display"></div>
         <hr class="divider"/>
-        <p style="color:var(--text-dim);font-size:0.78rem;margin-bottom:0.5rem">Canviar farol manualment:</p>
-        <div id="bluffs-grid" class="char-picker-grid"></div>
+        <p style="color:var(--text-dim);font-size:.78rem;margin-bottom:.5rem">Canviar manualment:</p>
+        <div id="farols-grid" class="char-picker-grid"></div>
       </div>
     </div>
   </div>
 </Layout>
 
-<script define:vars={{ charactersJson, POCKETGRIMOIRE_CDN }}>
-  const ALL_CHARS = JSON.parse(charactersJson);
-  const CDN = POCKETGRIMOIRE_CDN;
+<script is:inline>
+(async function () {
+  const CDN = 'https://www.pocketgrimoire.co.uk';
+  const TEAM_LABELS = {townsfolk:'Habitants',outsider:'Forasters',minion:'Servents',demon:'Dimonis',traveller:'Viatgers',fabled:'Llegendes'};
 
-  // State
-  let players = [];    // { id, name, charId, dead, reminders: [] }
-  let bluffs = [];     // charIds
-  let notes = '';
-  let selectedSetupChars = [];
-  let activePlayerIdx = null;
-  let pickerMode = 'add'; // 'add' | 'replace'
+  let ALL_CHARS = [];
+  try {
+    const res = await fetch('/data/characters.json');
+    ALL_CHARS = await res.json();
+  } catch(e) { console.error('Error loading characters:', e); }
 
-  const TEAM_LABELS = {
-    townsfolk: 'Habitants',
-    outsider: 'Forasters',
-    minion: 'Servents',
-    demon: 'Dimonis',
-    traveller: 'Viatgers',
-    fabled: 'Llegendes',
-  };
+  let players = [], bluffs = [], notes = '', selectedSetupChars = [];
+  let activeIdx = null, pickerMode = 'add';
 
-  function imgUrl(id) {
-    return `${CDN}/build/img/roles/${id}_g.webp`;
-  }
-
-  function charById(id) {
-    return ALL_CHARS.find(c => c.id === id);
-  }
-
-  // Load state
   function loadState() {
     try {
-      const setup = JSON.parse(localStorage.getItem('botc_setup') || '{}');
+      const setup = JSON.parse(localStorage.getItem('botc_setup')||'{}');
       selectedSetupChars = setup.chars || [];
-
-      const game = JSON.parse(localStorage.getItem('botc_game') || '{}');
+      const game = JSON.parse(localStorage.getItem('botc_game')||'{}');
       players = game.players || [];
       bluffs  = game.bluffs  || [];
       notes   = game.notes   || '';
-
-      // Merge custom chars into ALL_CHARS lookup
-      const customChars = JSON.parse(localStorage.getItem('botc_custom_chars') || '[]');
-      customChars.forEach(c => {
-        if (!ALL_CHARS.find(x => x.id === c.id)) ALL_CHARS.push(c);
+      const custom = JSON.parse(localStorage.getItem('botc_custom_chars')||'[]');
+      custom.forEach(c => { if(!ALL_CHARS.find(x=>x.id===c.id)) ALL_CHARS.push(c); });
+      // Restore custom chars for players
+      players.forEach(p => {
+        if (p.customChar && !ALL_CHARS.find(x=>x.id===p.charId)) ALL_CHARS.push(p.customChar);
       });
     } catch(_) {}
   }
 
-  function saveGameState() {
-    localStorage.setItem('botc_game', JSON.stringify({ players, bluffs, notes }));
+  function saveGame() {
+    localStorage.setItem('botc_game', JSON.stringify({players, bluffs, notes}));
   }
 
-  // Render token circle
+  function imgUrl(id) {
+    if (!id || id.startsWith('custom_')) return null;
+    return `${CDN}/build/img/roles/${id}_g.webp`;
+  }
+
+  function charById(id) { return ALL_CHARS.find(c=>c.id===id); }
+
+  // Circle
   function renderCircle() {
     const circle = document.getElementById('grimoire-circle');
     const empty  = document.getElementById('empty-state');
-
-    if (players.length === 0) {
-      circle.style.display = 'none';
-      empty.style.display = '';
-      renderPlayerList();
-      return;
-    }
-
-    circle.style.display = '';
-    empty.style.display  = 'none';
-
-    const N = players.length;
-    const tokens = players.map((p, i) => {
+    if (!circle) return;
+    if (!players.length) { circle.style.display='none'; empty.style.display=''; renderPlayerList(); return; }
+    circle.style.display=''; empty.style.display='none';
+    circle.innerHTML = `<div class="tokens-ring">${players.map((p,i) => {
       const char = p.charId ? charById(p.charId) : null;
-      const team = char ? char.team : 'townsfolk';
-      return `
-        <div
-          class="circle-token team-${team} ${p.dead ? 'dead' : ''}"
-          data-idx="${i}"
-          onclick="openTokenModal(${i})"
-          title="${p.name || `Jugador ${i+1}`}${char ? ` — ${char.name}` : ''}"
-        >
-          ${char
-            ? `<img src="${imgUrl(char.id)}" alt="${char.name}"
-                onerror="this.style.display='none'" loading="lazy"/>`
-            : `<span class="token-placeholder">${i+1}</span>`
-          }
-          ${p.dead ? '<div class="dead-shroud">†</div>' : ''}
-          <div class="token-label">${p.name || `J${i+1}`}</div>
-          ${char ? `<div class="token-char-name">${char.name}</div>` : ''}
-        </div>
-      `;
-    }).join('');
-
-    circle.innerHTML = `<div class="tokens-ring">${tokens}</div>`;
+      const url = char ? imgUrl(char.id) : null;
+      return `<div class="circle-token team-${char?.team||'townsfolk'} ${p.dead?'dead':''}" data-idx="${i}" style="position:absolute">
+        ${url ? `<img src="${url}" alt="${char.name}" onerror="this.style.display='none'" loading="lazy"/>` : `<span class="token-placeholder">${i+1}</span>`}
+        ${p.dead ? '<div class="dead-shroud">†</div>' : ''}
+        <div class="token-label">${p.name||`J${i+1}`}</div>
+        ${char ? `<div class="token-char-name">${char.name}</div>` : ''}
+      </div>`;
+    }).join('')}</div>`;
+    circle.querySelectorAll('.circle-token').forEach(el => {
+      el.addEventListener('click', () => openTokenModal(+el.dataset.idx));
+    });
     positionTokens();
     renderPlayerList();
   }
@@ -259,689 +175,267 @@ const POCKETGRIMOIRE_CDN = 'https://www.pocketgrimoire.co.uk';
     const ring = document.querySelector('.tokens-ring');
     if (!ring) return;
     const items = ring.querySelectorAll('.circle-token');
-    const N = items.length;
-    if (!N) return;
-
-    const W = ring.offsetWidth  || 600;
-    const H = ring.offsetHeight || 600;
-    const cx = W / 2;
-    const cy = H / 2;
-    const rx = Math.min(cx, cy) * 0.78;
-    const ry = Math.min(cx, cy) * 0.78;
-    const tokenW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--token-size')) || 80;
-
-    items.forEach((el, i) => {
-      const angle = (2 * Math.PI * i / N) - Math.PI / 2;
-      const x = cx + rx * Math.cos(angle) - tokenW / 2;
-      const y = cy + ry * Math.sin(angle) - tokenW / 2;
-      el.style.left = `${x}px`;
-      el.style.top  = `${y}px`;
+    const N = items.length; if (!N) return;
+    const W = ring.offsetWidth||600, H = ring.offsetHeight||600;
+    const cx=W/2, cy=H/2;
+    const r = Math.min(cx,cy)*0.78;
+    const tokenW = 80;
+    items.forEach((el,i) => {
+      const angle = (2*Math.PI*i/N) - Math.PI/2;
+      el.style.left = `${cx + r*Math.cos(angle) - tokenW/2}px`;
+      el.style.top  = `${cy + r*Math.sin(angle) - tokenW/2}px`;
     });
   }
 
-  // Sidebar player list
   function renderPlayerList() {
     const list = document.getElementById('player-list');
-    if (players.length === 0) {
-      list.innerHTML = '<p style="color:var(--text-dim);font-size:0.8rem;">Cap jugador. Afegeix-ne un!</p>';
-      return;
-    }
-    list.innerHTML = players.map((p, i) => {
+    if (!list) return;
+    if (!players.length) { list.innerHTML='<p style="color:var(--text-dim);font-size:.8rem">Cap jugador. Afegeix-ne un!</p>'; return; }
+    list.innerHTML = players.map((p,i) => {
       const char = p.charId ? charById(p.charId) : null;
-      return `
-        <div class="player-item ${p.dead ? 'dead' : ''}" onclick="openTokenModal(${i})">
-          <div class="player-token-sm team-${char?.team || 'townsfolk'}">
-            ${char
-              ? `<img src="${imgUrl(char.id)}" alt="${char.name}" onerror="this.style.display='none'" loading="lazy"/>`
-              : `<span>${i+1}</span>`}
-          </div>
-          <div class="player-info">
-            <span class="player-name">${p.name || `Jugador ${i+1}`}</span>
-            ${char ? `<span class="player-char">${char.name}</span>` : ''}
-          </div>
-          ${p.dead ? '<span class="dead-badge">†</span>' : ''}
+      const url = char ? imgUrl(char.id) : null;
+      return `<div class="player-item ${p.dead?'dead':''}" data-idx="${i}">
+        <div class="player-token-sm team-${char?.team||'townsfolk'}">
+          ${url ? `<img src="${url}" alt="${char.name}" onerror="this.style.display='none'" loading="lazy"/>` : `<span>${i+1}</span>`}
         </div>
-      `;
+        <div class="player-info">
+          <span class="player-name">${p.name||`Jugador ${i+1}`}</span>
+          ${char ? `<span class="player-char">${char.name}</span>` : ''}
+        </div>
+        ${p.dead ? '<span class="dead-badge">†</span>' : ''}
+      </div>`;
     }).join('');
+    list.querySelectorAll('.player-item').forEach(el => {
+      el.addEventListener('click', () => openTokenModal(+el.dataset.idx));
+    });
   }
 
   // Token modal
   function openTokenModal(idx) {
-    activePlayerIdx = idx;
+    activeIdx = idx;
     const p = players[idx];
     const char = p.charId ? charById(p.charId) : null;
-
-    document.getElementById('modal-char-name').textContent =
-      char ? char.name : `Jugador ${idx + 1}`;
-    document.getElementById('modal-char-ability').textContent =
-      char ? char.ability : '';
-    document.getElementById('modal-char-team').textContent =
-      char ? (TEAM_LABELS[char.team] || char.team) : '';
-    document.getElementById('modal-char-team').className =
-      `badge team-${char?.team || 'townsfolk'}`;
-    document.getElementById('dead-label').textContent =
-      p.dead ? 'Revifar' : 'Emmortallar';
-
+    document.getElementById('modal-char-name').textContent = char ? char.name : `Jugador ${idx+1}`;
+    document.getElementById('modal-char-ability').textContent = char?.ability || '';
+    const teamEl = document.getElementById('modal-char-team');
+    teamEl.textContent = char ? (TEAM_LABELS[char.team]||char.team) : '';
+    teamEl.className = `badge team-${char?.team||'townsfolk'}`;
+    document.getElementById('btn-toggle-dead').textContent = p.dead ? 'Revifar' : 'Emmortallar';
     const img = document.getElementById('modal-token-img');
-    img.className = `modal-token team-${char?.team || 'townsfolk'}`;
-    img.innerHTML = char
-      ? `<img src="${imgUrl(char.id)}" alt="${char.name}" onerror="this.style.display='none'" loading="lazy"/>`
-      : `<span>${idx+1}</span>`;
-
-    renderRemindersInModal(p);
+    img.className = `modal-token team-${char?.team||'townsfolk'}`;
+    const url = char ? imgUrl(char.id) : null;
+    img.innerHTML = url ? `<img src="${url}" alt="${char.name}" onerror="this.style.display='none'" loading="lazy"/>` : `<span>${idx+1}</span>`;
+    renderReminders(p);
     document.getElementById('token-modal').style.display = '';
   }
 
-  function renderRemindersInModal(p) {
+  function renderReminders(p) {
     const el = document.getElementById('reminders-display');
-    if (!p.reminders || p.reminders.length === 0) {
-      el.innerHTML = '';
-      return;
-    }
-    el.innerHTML = `
-      <p style="color:var(--text-muted);font-size:0.8rem;margin-bottom:0.5rem">Recordatoris:</p>
-      <div style="display:flex;flex-wrap:wrap;gap:0.5rem">
-        ${p.reminders.map((r, ri) => `
-          <span class="reminder-tag" onclick="removeReminder(${ri})">
-            ${r} ✕
-          </span>
-        `).join('')}
-      </div>
-    `;
+    if (!p.reminders?.length) { el.innerHTML=''; return; }
+    el.innerHTML = `<p style="color:var(--text-muted);font-size:.8rem;margin-bottom:.5rem">Recordatoris:</p>
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem">
+        ${p.reminders.map((r,ri) => `<span class="reminder-tag" data-ri="${ri}">${r} ✕</span>`).join('')}
+      </div>`;
+    el.querySelectorAll('.reminder-tag').forEach(tag => {
+      tag.addEventListener('click', () => {
+        players[activeIdx].reminders.splice(+tag.dataset.ri, 1);
+        saveGame(); renderReminders(players[activeIdx]); renderCircle();
+      });
+    });
   }
 
-  function closeTokenModal(e) {
-    if (!e || e.target.id === 'token-modal') {
-      document.getElementById('token-modal').style.display = 'none';
-      activePlayerIdx = null;
-    }
-  }
+  document.getElementById('close-token-modal').addEventListener('click', () => { document.getElementById('token-modal').style.display='none'; activeIdx=null; });
+  document.getElementById('token-modal').addEventListener('click', e => { if(e.target===e.currentTarget){e.currentTarget.style.display='none'; activeIdx=null;} });
 
-  function toggleDead() {
-    if (activePlayerIdx === null) return;
-    players[activePlayerIdx].dead = !players[activePlayerIdx].dead;
-    document.getElementById('dead-label').textContent =
-      players[activePlayerIdx].dead ? 'Revifar' : 'Emmortallar';
-    saveGameState();
-    renderCircle();
-  }
+  document.getElementById('btn-toggle-dead').addEventListener('click', () => {
+    if (activeIdx===null) return;
+    players[activeIdx].dead = !players[activeIdx].dead;
+    document.getElementById('btn-toggle-dead').textContent = players[activeIdx].dead ? 'Revifar' : 'Emmortallar';
+    saveGame(); renderCircle();
+  });
 
-  function removePlayer() {
-    if (activePlayerIdx === null) return;
-    players.splice(activePlayerIdx, 1);
-    saveGameState();
-    document.getElementById('token-modal').style.display = 'none';
-    activePlayerIdx = null;
-    renderCircle();
-  }
+  document.getElementById('btn-remove-player').addEventListener('click', () => {
+    if (activeIdx===null) return;
+    players.splice(activeIdx,1);
+    saveGame(); document.getElementById('token-modal').style.display='none'; activeIdx=null; renderCircle();
+  });
 
-  function addReminderToPlayer() {
-    if (activePlayerIdx === null) return;
-    const char = players[activePlayerIdx].charId
-      ? charById(players[activePlayerIdx].charId) : null;
+  document.getElementById('btn-add-reminder').addEventListener('click', () => {
+    if (activeIdx===null) return;
+    const char = players[activeIdx].charId ? charById(players[activeIdx].charId) : null;
     const reminders = char?.reminders || [];
-    if (reminders.length === 0) {
-      const custom = prompt('Recordatori personalitzat:');
-      if (custom?.trim()) {
-        players[activePlayerIdx].reminders.push(custom.trim());
-        saveGameState();
-        renderRemindersInModal(players[activePlayerIdx]);
-        renderCircle();
-      }
-      return;
+    let chosen;
+    if (!reminders.length) { chosen = prompt('Recordatori personalitzat:'); }
+    else {
+      const opts = reminders.map((r,i)=>`${i+1}. ${r}`).join('\n');
+      const n = prompt(`Selecciona:\n${opts}\n0. Personalitzat`);
+      if (n===null) return;
+      chosen = +n===0 ? prompt('Recordatori personalitzat:') : reminders[+n-1];
     }
-    const opts = reminders.map((r, i) => `${i+1}. ${r}`).join('\n');
-    const choice = prompt(`Selecciona recordatori:\n${opts}\n0. Personalitzat`);
-    if (!choice) return;
-    const n = parseInt(choice);
-    if (n === 0) {
-      const custom = prompt('Recordatori personalitzat:');
-      if (custom?.trim()) players[activePlayerIdx].reminders.push(custom.trim());
-    } else if (n >= 1 && n <= reminders.length) {
-      players[activePlayerIdx].reminders.push(reminders[n-1]);
-    }
-    saveGameState();
-    renderRemindersInModal(players[activePlayerIdx]);
-    renderCircle();
-  }
+    if (chosen?.trim()) { players[activeIdx].reminders.push(chosen.trim()); saveGame(); renderReminders(players[activeIdx]); renderCircle(); }
+  });
 
-  function removeReminder(idx) {
-    if (activePlayerIdx === null) return;
-    players[activePlayerIdx].reminders.splice(idx, 1);
-    saveGameState();
-    renderRemindersInModal(players[activePlayerIdx]);
-    renderCircle();
-  }
+  document.getElementById('btn-replace').addEventListener('click', () => {
+    pickerMode='replace';
+    document.getElementById('picker-title').textContent='Substituir Personatge';
+    document.getElementById('picker-search').value='';
+    renderPickerGrid('');
+    document.getElementById('char-picker-modal').style.display='';
+    document.getElementById('token-modal').style.display='none';
+  });
 
   // Character picker
-  function openAddTokenModal() {
-    pickerMode = 'add';
-    document.getElementById('picker-title').textContent = 'Afegeix Jugador';
-    renderCharPicker('');
-    document.getElementById('char-picker-modal').style.display = '';
-    document.getElementById('char-search').value = '';
-    document.getElementById('char-search').focus();
-  }
+  document.getElementById('sb-add-player').addEventListener('click', () => {
+    pickerMode='add';
+    document.getElementById('picker-title').textContent='Afegeix Jugador';
+    document.getElementById('picker-search').value='';
+    renderPickerGrid('');
+    document.getElementById('char-picker-modal').style.display='';
+  });
+  document.getElementById('close-picker').addEventListener('click', () => { document.getElementById('char-picker-modal').style.display='none'; });
+  document.getElementById('char-picker-modal').addEventListener('click', e => { if(e.target===e.currentTarget) e.currentTarget.style.display='none'; });
+  document.getElementById('picker-search').addEventListener('input', e => renderPickerGrid(e.target.value.toLowerCase()));
 
-  function openReplaceModal() {
-    pickerMode = 'replace';
-    document.getElementById('picker-title').textContent = 'Substituir Personatge';
-    renderCharPicker('');
-    document.getElementById('char-picker-modal').style.display = '';
-    document.getElementById('char-search').value = '';
-    document.getElementById('char-search').focus();
-    document.getElementById('token-modal').style.display = 'none';
-  }
-
-  function closeCharPicker(e) {
-    if (!e || e.target.id === 'char-picker-modal') {
-      document.getElementById('char-picker-modal').style.display = 'none';
-    }
-  }
-
-  function filterCharPicker(q) {
-    renderCharPicker(q.toLowerCase());
-  }
-
-  function renderCharPicker(query) {
-    const inUse = new Set(players.map(p => p.charId).filter(Boolean));
-    const chars = selectedSetupChars.length > 0
-      ? ALL_CHARS.filter(c => selectedSetupChars.includes(c.id))
-      : ALL_CHARS.filter(c => ['tb','bmr','snv'].includes(c.edition));
-
-    const filtered = chars.filter(c =>
-      !query || c.name.toLowerCase().includes(query) || c.team.toLowerCase().includes(query)
-    );
-
+  function renderPickerGrid(q) {
+    const inUse = new Set(players.map(p=>p.charId).filter(Boolean));
+    let chars = selectedSetupChars.length ? ALL_CHARS.filter(c=>selectedSetupChars.includes(c.id)) : ALL_CHARS.filter(c=>['tb','bmr','snv'].includes(c.edition)||c.id.startsWith('custom_'));
+    if (q) chars = chars.filter(c=>c.name.toLowerCase().includes(q));
     const grid = document.getElementById('char-picker-grid');
-    if (filtered.length === 0) {
-      grid.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:2rem">Cap resultat.</p>';
-      return;
-    }
-
-    grid.innerHTML = filtered.map(c => `
-      <button
-        class="picker-char ${inUse.has(c.id) ? 'in-use' : ''} team-${c.team}"
-        onclick="pickChar('${c.id}')"
-        title="${c.ability}"
-      >
-        <div class="picker-img team-${c.team}">
-          <img src="${imgUrl(c.id)}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>
-        </div>
+    if (!chars.length) { grid.innerHTML='<p style="color:var(--text-muted);text-align:center;padding:2rem">Cap resultat.</p>'; return; }
+    grid.innerHTML = chars.map(c => {
+      const url = imgUrl(c.id);
+      return `<button class="picker-char ${inUse.has(c.id)?'in-use':''} team-${c.team}" data-id="${c.id}" title="${c.ability||''}">
+        <div class="picker-img team-${c.team}">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${c.name[0]}</span>`}</div>
         <span>${c.name}</span>
-        ${inUse.has(c.id) ? '<span class="in-use-badge">·</span>' : ''}
-      </button>
-    `).join('');
+        ${inUse.has(c.id)?'<span class="in-use-badge">·</span>':''}
+      </button>`;
+    }).join('');
+    grid.querySelectorAll('.picker-char').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        if (pickerMode==='add') {
+          const name = prompt(`Nom del jugador ${players.length+1} (opcional):`);
+          players.push({id:Date.now(), name:name?.trim()||`Jugador ${players.length+1}`, charId:id, dead:false, reminders:[]});
+        } else if (pickerMode==='replace' && activeIdx!==null) {
+          players[activeIdx].charId = id;
+        }
+        saveGame(); document.getElementById('char-picker-modal').style.display='none'; renderCircle();
+      });
+    });
   }
 
-  function pickChar(charId) {
-    if (pickerMode === 'add') {
-      const name = prompt(`Nom del jugador ${players.length + 1} (opcional):`);
-      players.push({ id: Date.now(), name: name?.trim() || `Jugador ${players.length + 1}`, charId, dead: false, reminders: [] });
-    } else if (pickerMode === 'replace' && activePlayerIdx !== null) {
-      players[activePlayerIdx].charId = charId;
-    }
-    saveGameState();
-    document.getElementById('char-picker-modal').style.display = 'none';
-    renderCircle();
-  }
+  // Dimonis de farol
+  document.getElementById('sb-farols').addEventListener('click', () => {
+    renderFarolsModal();
+    document.getElementById('farols-modal').style.display='';
+  });
+  document.getElementById('close-farols').addEventListener('click', () => { document.getElementById('farols-modal').style.display='none'; });
+  document.getElementById('farols-modal').addEventListener('click', e => { if(e.target===e.currentTarget) e.currentTarget.style.display='none'; });
 
-  // Bluffs
-  function openBluffsModal() {
-    renderBluffs('');
-    document.getElementById('bluffs-modal').style.display = '';
-  }
-
-  function closeBluffs(e) {
-    if (!e || e.target.id === 'bluffs-modal') {
-      document.getElementById('bluffs-modal').style.display = 'none';
-    }
-  }
-
-  function renderBluffs() {
-    // Show active farols at top
-    const activeFarolEl = document.getElementById('farol-active');
-    if (bluffs.length > 0) {
-      const farolChars = bluffs.map(id => charById(id)).filter(Boolean);
-      activeFarolEl.innerHTML = `
-        <div style="display:flex;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.5rem">
-          ${farolChars.map(c => `
-            <div style="display:flex;flex-direction:column;align-items:center;gap:0.3rem">
-              <div class="picker-img team-${c.team}" style="width:52px;height:52px">
-                ${imgUrl(c.id)
-                  ? `<img src="${imgUrl(c.id)}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`
-                  : `<span style="font-size:1rem;color:var(--text-muted)">${c.name[0]}</span>`}
-              </div>
-              <span style="font-size:0.7rem;color:var(--accent)">${c.name}</span>
-            </div>
-          `).join('')}
-        </div>
-      `;
+  function renderFarolsModal() {
+    const activeEl = document.getElementById('farol-active-display');
+    if (bluffs.length) {
+      const farolChars = bluffs.map(id=>charById(id)).filter(Boolean);
+      activeEl.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:.75rem;margin-bottom:.5rem">${farolChars.map(c => {
+        const url = imgUrl(c.id);
+        return `<div style="display:flex;flex-direction:column;align-items:center;gap:.3rem">
+          <div class="picker-img team-${c.team}" style="width:52px;height:52px">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${c.name[0]}</span>`}</div>
+          <span style="font-size:.7rem;color:var(--accent)">${c.name}</span>
+        </div>`;
+      }).join('')}</div>`;
     } else {
-      activeFarolEl.innerHTML = '<p style="color:var(--text-dim);font-size:0.82rem;margin-bottom:0.5rem">Cap farol actiu. Randomitza des de la configuració o tria manualment.</p>';
+      activeEl.innerHTML = '<p style="color:var(--text-dim);font-size:.82rem;margin-bottom:.5rem">Cap farol actiu. Randomitza des de la configuració o tria manualment.</p>';
     }
-
-    const inUse = new Set(players.map(p => p.charId).filter(Boolean));
-    const chars = selectedSetupChars.length > 0
-      ? ALL_CHARS.filter(c => selectedSetupChars.includes(c.id))
-      : ALL_CHARS.filter(c => ['tb','bmr','snv'].includes(c.edition) || c.id.startsWith('custom_'));
-
-    const notInUse = chars.filter(c => !inUse.has(c.id));
-    const grid = document.getElementById('bluffs-grid');
-    grid.innerHTML = notInUse.map(c => `
-      <button
-        class="picker-char ${bluffs.includes(c.id) ? 'bluff-selected' : ''} team-${c.team}"
-        onclick="toggleBluff('${c.id}', this)"
-        title="${c.ability || ''}"
-      >
-        <div class="picker-img team-${c.team}">
-          ${imgUrl(c.id)
-            ? `<img src="${imgUrl(c.id)}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`
-            : `<span style="font-size:0.8rem;color:var(--text-muted)">${c.name[0]}</span>`}
-        </div>
+    const inUse = new Set(players.map(p=>p.charId).filter(Boolean));
+    let chars = selectedSetupChars.length ? ALL_CHARS.filter(c=>selectedSetupChars.includes(c.id)) : ALL_CHARS.filter(c=>['tb','bmr','snv'].includes(c.edition)||c.id.startsWith('custom_'));
+    chars = chars.filter(c=>!inUse.has(c.id));
+    const grid = document.getElementById('farols-grid');
+    grid.innerHTML = chars.map(c => {
+      const url = imgUrl(c.id);
+      return `<button class="picker-char ${bluffs.includes(c.id)?'bluff-selected':''} team-${c.team}" data-id="${c.id}" title="${c.ability||''}">
+        <div class="picker-img team-${c.team}">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${c.name[0]}</span>`}</div>
         <span>${c.name}</span>
-        ${bluffs.includes(c.id) ? '<span class="bluff-badge">🎭</span>' : ''}
-      </button>
-    `).join('');
-  }
-
-  function toggleBluff(charId, btn) {
-    const idx = bluffs.indexOf(charId);
-    if (idx >= 0) {
-      bluffs.splice(idx, 1);
-      btn.classList.remove('bluff-selected');
-    } else {
-      bluffs.push(charId);
-      btn.classList.add('bluff-selected');
-    }
-    saveGameState();
+        ${bluffs.includes(c.id)?'<span class="bluff-badge">🎭</span>':''}
+      </button>`;
+    }).join('');
+    grid.querySelectorAll('.picker-char').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id=btn.dataset.id, idx=bluffs.indexOf(id);
+        if(idx>=0){bluffs.splice(idx,1);btn.classList.remove('bluff-selected');}
+        else{bluffs.push(id);btn.classList.add('bluff-selected');}
+        saveGame(); renderFarolsModal();
+      });
+    });
   }
 
   // Notes
-  function saveNotes(val) {
-    notes = val;
-    saveGameState();
-  }
+  document.getElementById('notes-area').addEventListener('input', e => { notes=e.target.value; saveGame(); });
 
-  function clearGame() {
-    if (!confirm('Segur que vols iniciar una nova partida? Es perdran les dades actuals.')) return;
-    players = [];
-    bluffs = [];
-    notes = '';
-    saveGameState();
-    document.getElementById('notes-area').value = '';
-    renderCircle();
-  }
+  // Clear
+  document.getElementById('sb-clear').addEventListener('click', () => {
+    if (!confirm('Segur que vols iniciar una nova partida?')) return;
+    players=[]; bluffs=[]; notes='';
+    saveGame(); document.getElementById('notes-area').value=''; renderCircle();
+  });
+
+  window.addEventListener('resize', positionTokens);
 
   // Init
   loadState();
   renderCircle();
-
-  // Restore notes
   document.getElementById('notes-area').value = notes;
-
-  // Reposition on resize
-  window.addEventListener('resize', positionTokens);
-
-  // Expose all onclick-referenced functions to global scope
-  Object.assign(window, {
-    openAddTokenModal,
-    openBluffsModal,
-    clearGame,
-    openTokenModal,
-    closeTokenModal,
-    toggleDead,
-    removePlayer,
-    addReminderToPlayer,
-    removeReminder,
-    openReplaceModal,
-    closeCharPicker,
-    filterCharPicker,
-    pickChar,
-    closeBluffs,
-    toggleBluff,
-    saveNotes,
-  });
+})();
 </script>
 
 <style>
-.grimoire-page {
-  display: flex;
-  height: calc(100vh - 53px);
-  overflow: hidden;
-}
-
-/* Sidebar */
-.sidebar {
-  width: 240px;
-  flex-shrink: 0;
-  background: var(--bg-card);
-  border-right: 1px solid var(--border);
-  overflow-y: auto;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.sidebar-section {
-  margin-bottom: 1.25rem;
-}
-
-.sidebar-title {
-  font-size: 0.7rem;
-  font-family: var(--font-sans);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-dim);
-  margin-bottom: 0.5rem;
-}
-
-.sidebar-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.45rem 0.6rem;
-  border-radius: 6px;
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  background: transparent;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all 0.15s;
-  text-align: left;
-  margin-bottom: 0.25rem;
-}
-.sidebar-btn:hover {
-  color: var(--text);
-  background: var(--bg-hover);
-  border-color: var(--border);
-}
-.sidebar-btn.danger { color: var(--red-light); }
-.sidebar-btn.danger:hover { background: rgba(139,26,26,0.15); border-color: var(--red); }
-
-/* Player list */
-.player-list { display: flex; flex-direction: column; gap: 0.35rem; }
-
-.player-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0.5rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.1s;
-}
-.player-item:hover { background: var(--bg-hover); }
-.player-item.dead { opacity: 0.5; }
-
-.player-token-sm {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 1.5px solid var(--team-color, var(--border-accent));
-  overflow: hidden;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.65rem;
-  color: var(--text-muted);
-  background: var(--team-bg, rgba(196,136,42,0.1));
-}
-.player-token-sm img { width: 100%; height: 100%; object-fit: cover; }
-
-.player-info {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  flex: 1;
-}
-.player-name {
-  font-size: 0.8rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.player-char { font-size: 0.7rem; color: var(--text-muted); }
-.dead-badge { color: var(--text-dim); font-size: 0.9rem; }
-
-/* Notes */
-.notes-input {
-  width: 100%;
-  min-height: 100px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text);
-  font-size: 0.8rem;
-  font-family: inherit;
-  padding: 0.5rem;
-  resize: vertical;
-}
-.notes-input:focus { outline: none; border-color: var(--accent-dark); }
-.notes-input::placeholder { color: var(--text-dim); }
-
-/* Main grimoire */
-.grimoire-main {
-  flex: 1;
-  overflow: hidden;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.grimoire-main .empty-state { padding: 3rem 2rem; }
-
-.grimoire-circle {
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
-
-.tokens-ring {
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
-
-/* Circle tokens */
-.circle-token {
-  position: absolute;
-  width: var(--token-size);
-  height: var(--token-size);
-  border-radius: 50%;
-  border: 2px solid var(--team-color, var(--border-accent));
-  background: var(--team-bg, rgba(196,136,42,0.1));
-  overflow: visible;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.circle-token > img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-
-.circle-token:hover {
-  transform: scale(1.12);
-  box-shadow: 0 0 16px rgba(196,136,42,0.5);
-  z-index: 10;
-}
-
-.circle-token.dead {
-  filter: grayscale(0.8) brightness(0.45);
-  border-color: #3a2020;
-}
-
-.dead-shroud {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 1.4rem;
-  color: #c04040;
-  pointer-events: none;
-  z-index: 2;
-  text-shadow: 0 0 6px rgba(0,0,0,0.8);
-}
-
-.token-placeholder {
-  font-size: 1.2rem;
-  color: var(--text-muted);
-  font-weight: bold;
-}
-
-.token-label {
-  position: absolute;
-  bottom: calc(100% + 4px);
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.65rem;
-  color: var(--text-muted);
-  white-space: nowrap;
-  background: rgba(10,5,5,0.85);
-  padding: 1px 4px;
-  border-radius: 3px;
-  pointer-events: none;
-}
-
-.token-char-name {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.62rem;
-  color: var(--accent);
-  white-space: nowrap;
-  background: rgba(10,5,5,0.85);
-  padding: 1px 4px;
-  border-radius: 3px;
-  pointer-events: none;
-}
-
-/* Modal token */
-.modal-token {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  border: 2px solid var(--team-color, var(--border-accent));
-  background: var(--team-bg, rgba(196,136,42,0.1));
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-size: 1.1rem;
-  color: var(--text-muted);
-}
-.modal-token img { width: 100%; height: 100%; object-fit: cover; }
-
-/* Modal actions */
-.modal-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-}
-
-.modal-action-btn {
-  padding: 0.6rem 0.75rem;
-  background: var(--bg-hover);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.15s;
-  text-align: center;
-}
-.modal-action-btn:hover {
-  color: var(--accent);
-  border-color: var(--border-accent);
-}
-.modal-action-btn.danger { color: var(--red-light); }
-.modal-action-btn.danger:hover { background: rgba(139,26,26,0.2); border-color: var(--red); }
-
-/* Reminder */
-.reminder-tag {
-  display: inline-block;
-  padding: 0.2rem 0.5rem;
-  background: rgba(196,136,42,0.15);
-  border: 1px solid var(--border-accent);
-  border-radius: 4px;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-.reminder-tag:hover { color: var(--red-light); }
-
-/* Char picker grid */
-.char-picker-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
-  gap: 0.5rem;
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.picker-char {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.5rem 0.3rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: all 0.15s;
-  font-size: 0.68rem;
-  color: var(--text-muted);
-  position: relative;
-}
-.picker-char:hover { border-color: var(--accent); color: var(--text); }
-.picker-char.in-use { opacity: 0.4; }
-.picker-char.bluff-selected {
-  border-color: var(--accent);
-  background: rgba(196,136,42,0.1);
-}
-
-.picker-img {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: 1.5px solid var(--team-color, var(--border-accent));
-  background: var(--team-bg, rgba(196,136,42,0.1));
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.picker-img img { width: 100%; height: 100%; object-fit: cover; }
-
-.in-use-badge, .bluff-badge {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  font-size: 0.65rem;
-}
-
-/* Reminder area */
-.reminder-area {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-/* Responsive sidebar */
-@media (max-width: 640px) {
-  .sidebar { width: 180px; }
-}
+.grimoire-page { display:flex; height:calc(100vh - 53px); overflow:hidden; }
+.sidebar { width:240px; flex-shrink:0; background:var(--bg-card); border-right:1px solid var(--border); overflow-y:auto; padding:1rem; display:flex; flex-direction:column; gap:.5rem; }
+.sidebar-section { margin-bottom:1.25rem; }
+.sidebar-title { font-size:.7rem; font-family:var(--font-sans); text-transform:uppercase; letter-spacing:.1em; color:var(--text-dim); margin-bottom:.5rem; }
+.sidebar-btn { display:flex; align-items:center; gap:.5rem; width:100%; padding:.45rem .6rem; border-radius:6px; font-size:.82rem; color:var(--text-muted); background:transparent; border:1px solid transparent; cursor:pointer; transition:all .15s; text-align:left; margin-bottom:.25rem; text-decoration:none; }
+.sidebar-btn:hover { color:var(--text); background:var(--bg-hover); border-color:var(--border); }
+.sidebar-btn.danger { color:var(--red-light); }
+.sidebar-btn.danger:hover { background:rgba(139,26,26,.15); border-color:var(--red); }
+.player-list { display:flex; flex-direction:column; gap:.35rem; }
+.player-item { display:flex; align-items:center; gap:.5rem; padding:.35rem .5rem; border-radius:6px; cursor:pointer; transition:background .1s; }
+.player-item:hover { background:var(--bg-hover); }
+.player-item.dead { opacity:.5; }
+.player-token-sm { width:28px; height:28px; border-radius:50%; border:1.5px solid var(--team-color,var(--border-accent)); overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:.65rem; color:var(--text-muted); background:var(--team-bg,rgba(196,136,42,.1)); }
+.player-token-sm img { width:100%; height:100%; object-fit:cover; }
+.player-info { display:flex; flex-direction:column; min-width:0; flex:1; }
+.player-name { font-size:.8rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.player-char { font-size:.7rem; color:var(--text-muted); }
+.dead-badge { color:var(--text-dim); font-size:.9rem; }
+.notes-input { width:100%; min-height:100px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); font-size:.8rem; font-family:inherit; padding:.5rem; resize:vertical; }
+.notes-input:focus { outline:none; border-color:var(--accent-dark); }
+.notes-input::placeholder { color:var(--text-dim); }
+.grimoire-main { flex:1; overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center; }
+.grimoire-circle { width:100%; height:100%; position:relative; }
+.tokens-ring { width:100%; height:100%; position:relative; }
+.circle-token { width:80px; height:80px; border-radius:50%; border:2px solid var(--team-color,var(--border-accent)); background:var(--team-bg,rgba(196,136,42,.1)); overflow:visible; cursor:pointer; transition:transform .2s,box-shadow .2s; display:flex; align-items:center; justify-content:center; }
+.circle-token > img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.circle-token:hover { transform:scale(1.12); box-shadow:0 0 16px rgba(196,136,42,.5); z-index:10; }
+.circle-token.dead { filter:grayscale(.8) brightness(.45); border-color:#3a2020; }
+.dead-shroud { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:1.4rem; color:#c04040; pointer-events:none; z-index:2; text-shadow:0 0 6px rgba(0,0,0,.8); }
+.token-placeholder { font-size:1.2rem; color:var(--text-muted); font-weight:bold; }
+.token-label { position:absolute; bottom:calc(100% + 4px); left:50%; transform:translateX(-50%); font-size:.65rem; color:var(--text-muted); white-space:nowrap; background:rgba(10,5,5,.85); padding:1px 4px; border-radius:3px; pointer-events:none; }
+.token-char-name { position:absolute; top:calc(100% + 4px); left:50%; transform:translateX(-50%); font-size:.62rem; color:var(--accent); white-space:nowrap; background:rgba(10,5,5,.85); padding:1px 4px; border-radius:3px; pointer-events:none; }
+.modal-token { width:52px; height:52px; border-radius:50%; border:2px solid var(--team-color,var(--border-accent)); background:var(--team-bg,rgba(196,136,42,.1)); overflow:hidden; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:1.1rem; color:var(--text-muted); }
+.modal-token img { width:100%; height:100%; object-fit:cover; }
+.modal-actions { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; }
+.modal-action-btn { padding:.6rem .75rem; background:var(--bg-hover); border:1px solid var(--border); border-radius:var(--radius); color:var(--text-muted); font-size:.85rem; cursor:pointer; transition:all .15s; text-align:center; }
+.modal-action-btn:hover { color:var(--accent); border-color:var(--border-accent); }
+.modal-action-btn.danger { color:var(--red-light); }
+.modal-action-btn.danger:hover { background:rgba(139,26,26,.2); border-color:var(--red); }
+.reminder-tag { display:inline-block; padding:.2rem .5rem; background:rgba(196,136,42,.15); border:1px solid var(--border-accent); border-radius:4px; font-size:.75rem; color:var(--text-muted); cursor:pointer; }
+.reminder-tag:hover { color:var(--red-light); }
+.char-picker-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(78px,1fr)); gap:.5rem; max-height:400px; overflow-y:auto; }
+.picker-char { display:flex; flex-direction:column; align-items:center; gap:.3rem; padding:.5rem .3rem; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; transition:all .15s; font-size:.68rem; color:var(--text-muted); position:relative; }
+.picker-char:hover { border-color:var(--accent); color:var(--text); }
+.picker-char.in-use { opacity:.4; }
+.picker-char.bluff-selected { border-color:var(--accent); background:rgba(196,136,42,.1); }
+.picker-img { width:48px; height:48px; border-radius:50%; border:1.5px solid var(--team-color,var(--border-accent)); background:var(--team-bg,rgba(196,136,42,.1)); overflow:hidden; display:flex; align-items:center; justify-content:center; }
+.picker-img img { width:100%; height:100%; object-fit:cover; }
+.in-use-badge,.bluff-badge { position:absolute; top:2px; right:2px; font-size:.65rem; }
+@media(max-width:640px){.sidebar{width:180px}}
 </style>

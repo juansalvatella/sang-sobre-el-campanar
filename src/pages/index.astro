@@ -1,49 +1,11 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { ca } from '../i18n/ca';
-import charactersRaw from '../data/characters.json';
-
-type Character = {
-  id: string;
-  name: string;
-  edition: string;
-  team: string;
-  firstNight: number;
-  firstNightReminder: string;
-  otherNight: number;
-  otherNightReminder: string;
-  reminders: string[];
-  setup: boolean;
-  ability: string;
-  image: string;
-};
-
-const characters = (charactersRaw as Character[]).filter(
-  c => ['tb', 'bmr', 'snv'].includes(c.edition)
-);
-const charactersJson = JSON.stringify(characters);
-const POCKETGRIMOIRE_CDN = 'https://www.pocketgrimoire.co.uk';
-
-const teamCompMap: Record<number, { townsfolk: number; outsider: number; minion: number; demon: number }> = {
-  5:  { townsfolk: 3, outsider: 0, minion: 1, demon: 1 },
-  6:  { townsfolk: 3, outsider: 1, minion: 1, demon: 1 },
-  7:  { townsfolk: 5, outsider: 0, minion: 1, demon: 1 },
-  8:  { townsfolk: 5, outsider: 1, minion: 1, demon: 1 },
-  9:  { townsfolk: 5, outsider: 2, minion: 1, demon: 1 },
-  10: { townsfolk: 7, outsider: 0, minion: 2, demon: 1 },
-  11: { townsfolk: 7, outsider: 1, minion: 2, demon: 1 },
-  12: { townsfolk: 7, outsider: 2, minion: 2, demon: 1 },
-  13: { townsfolk: 9, outsider: 0, minion: 3, demon: 1 },
-  14: { townsfolk: 9, outsider: 1, minion: 3, demon: 1 },
-  15: { townsfolk: 9, outsider: 2, minion: 3, demon: 1 },
-};
-const teamCompJson = JSON.stringify(teamCompMap);
 ---
 
 <Layout title="Barret Seleccionador" activePage="setup">
   <div class="setup-page container">
 
-    <!-- Header -->
     <div class="hat-header">
       <div class="hat-icon">🎩</div>
       <div>
@@ -54,27 +16,25 @@ const teamCompJson = JSON.stringify(teamCompMap);
       </div>
     </div>
 
-    <!-- Action bar -->
     <div class="action-bar">
-      <button class="btn btn-primary" onclick="openCharSelector()">
+      <button class="btn btn-primary" id="btn-add-char">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
         Afegir Personatge
       </button>
-      <button class="btn btn-secondary" onclick="openCreateCharModal()">
+      <button class="btn btn-secondary" id="btn-create-char">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
         Crear Personatge
       </button>
-      <button class="btn btn-ghost" onclick="openCharSheet()" id="sheet-btn">
+      <button class="btn btn-ghost" id="btn-sheet">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
         Full de Personatge
       </button>
-      <button class="btn btn-danger" onclick="resetHat()">
+      <button class="btn btn-danger" id="btn-reset">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
         Netejar
       </button>
     </div>
 
-    <!-- Hat display -->
     <div class="hat-area">
       <div id="hat-empty" class="hat-empty">
         <span style="font-size:3rem">🎩</span>
@@ -84,15 +44,13 @@ const teamCompJson = JSON.stringify(teamCompMap);
       <div id="hat-tokens" class="hat-tokens" style="display:none"></div>
     </div>
 
-    <!-- Player count + randomize -->
     <div class="randomize-section">
       <div class="player-count-row">
         <span class="count-label">Jugadors:</span>
         {[5,6,7,8,9,10,11,12,13,14,15].map(n => (
-          <button class="count-btn" data-count={n} onclick="selectCount(this)">{n}</button>
+          <button class="count-btn" data-count={n}>{n}</button>
         ))}
       </div>
-
       <div id="comp-bar" class="comp-bar" style="display:none">
         <span class="comp-lbl">Composició:</span>
         <span class="comp-chip townsfolk-chip"></span>
@@ -100,16 +58,14 @@ const teamCompJson = JSON.stringify(teamCompMap);
         <span class="comp-chip minion-chip"></span>
         <span class="comp-chip demon-chip"></span>
       </div>
-
       <div class="randomize-row">
-        <button class="btn btn-primary btn-lg" id="randomize-btn" onclick="randomize()" disabled>
+        <button class="btn btn-primary btn-lg" id="btn-randomize" disabled>
           🎲 Randomitzar Partida
         </button>
         <div id="randomize-info" class="randomize-info"></div>
       </div>
     </div>
 
-    <!-- Result: Dimonis de farol -->
     <div id="farol-section" class="farol-section" style="display:none">
       <h3 class="section-title" style="font-size:1rem">🎭 Dimonis de Farol</h3>
       <p class="section-subtitle" style="font-size:0.82rem">
@@ -118,44 +74,34 @@ const teamCompJson = JSON.stringify(teamCompMap);
       <div id="farol-tokens" class="farol-tokens"></div>
     </div>
 
-  </div><!-- end container -->
-
-  <!-- ===================== MODALS ===================== -->
+  </div>
 
   <!-- Character selector modal -->
-  <div id="char-selector-modal" class="modal-overlay" style="display:none" onclick="closeSelectorModal(event)">
-    <div class="modal" style="max-width:760px" onclick="event.stopPropagation()">
+  <div id="char-selector-modal" class="modal-overlay" style="display:none">
+    <div class="modal" style="max-width:760px">
       <div class="modal-header">
         <h3>Selecciona Personatge</h3>
-        <button class="modal-close btn" onclick="closeSelectorModal()">✕</button>
+        <button class="modal-close btn" id="close-selector">✕</button>
       </div>
       <div class="modal-body">
-        <!-- Edition filter -->
         <div class="edition-filter">
-          <button class="ed-btn active" data-ed="all" onclick="filterEdition(this)">Tots</button>
-          <button class="ed-btn" data-ed="tb"  onclick="filterEdition(this)">🍺 Cerveseria</button>
-          <button class="ed-btn" data-ed="bmr" onclick="filterEdition(this)">🌙 Lluna</button>
-          <button class="ed-btn" data-ed="snv" onclick="filterEdition(this)">🌹 Sectes</button>
+          <button class="ed-btn active" data-ed="all">Tots</button>
+          <button class="ed-btn" data-ed="tb">🍺 Cerveseria</button>
+          <button class="ed-btn" data-ed="bmr">🌙 Lluna</button>
+          <button class="ed-btn" data-ed="snv">🌹 Sectes</button>
         </div>
-        <input
-          type="text"
-          class="input"
-          id="selector-search"
-          placeholder="Cerca per nom..."
-          oninput="filterSelectorSearch(this.value)"
-          style="margin:0.75rem 0"
-        />
+        <input type="text" class="input" id="selector-search" placeholder="Cerca per nom..." style="margin:0.75rem 0" />
         <div id="selector-grid" class="selector-grid"></div>
       </div>
     </div>
   </div>
 
   <!-- Create character modal -->
-  <div id="create-char-modal" class="modal-overlay" style="display:none" onclick="closeCreateModal(event)">
-    <div class="modal" style="max-width:480px" onclick="event.stopPropagation()">
+  <div id="create-char-modal" class="modal-overlay" style="display:none">
+    <div class="modal" style="max-width:480px">
       <div class="modal-header">
         <h3>✏️ Crear Personatge</h3>
-        <button class="modal-close btn" onclick="closeCreateModal()">✕</button>
+        <button class="modal-close btn" id="close-create">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
@@ -170,12 +116,8 @@ const teamCompJson = JSON.stringify(teamCompMap);
           <div class="form-group">
             <label class="form-label">Alineació</label>
             <div class="radio-group">
-              <label class="radio-label">
-                <input type="radio" name="cc-align" value="good" checked /> Bo
-              </label>
-              <label class="radio-label">
-                <input type="radio" name="cc-align" value="evil" /> Dolent
-              </label>
+              <label class="radio-label"><input type="radio" name="cc-align" value="good" checked /> Bo</label>
+              <label class="radio-label"><input type="radio" name="cc-align" value="evil" /> Dolent</label>
             </div>
           </div>
           <div class="form-group">
@@ -191,782 +133,360 @@ const teamCompJson = JSON.stringify(teamCompMap);
         </div>
         <div id="cc-error" class="form-error" style="display:none"></div>
         <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1rem">
-          <button class="btn btn-ghost" onclick="closeCreateModal()">Cancel·lar</button>
-          <button class="btn btn-primary" onclick="saveCustomChar()">Afegir al Barret</button>
+          <button class="btn btn-ghost" id="cancel-create">Cancel·lar</button>
+          <button class="btn btn-primary" id="save-create">Afegir al Barret</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Character sheet modal -->
-  <div id="sheet-modal" class="modal-overlay" style="display:none" onclick="closeSheetModal(event)">
-    <div class="modal" style="max-width:680px" onclick="event.stopPropagation()">
+  <div id="sheet-modal" class="modal-overlay" style="display:none">
+    <div class="modal" style="max-width:680px">
       <div class="modal-header">
         <h3>📄 Full de Personatge</h3>
-        <button class="modal-close btn" onclick="closeSheetModal()">✕</button>
+        <button class="modal-close btn" id="close-sheet">✕</button>
       </div>
-      <div class="modal-body" id="sheet-content">
-      </div>
+      <div class="modal-body" id="sheet-content"></div>
     </div>
   </div>
 </Layout>
 
-<script define:vars={{ charactersJson, teamCompJson, POCKETGRIMOIRE_CDN }}>
-  const ALL_CHARS  = JSON.parse(charactersJson);
-  const TEAM_COMP  = JSON.parse(teamCompJson);
-  const CDN        = POCKETGRIMOIRE_CDN;
-
-  const TEAM_LABELS = {
-    townsfolk: 'Vilatà',
-    outsider:  'Foraster',
-    minion:    'Esbirro',
-    demon:     'Dimoni',
-    traveller: 'Viatger',
-    fabled:    'Llegenda',
+<script is:inline>
+(async function () {
+  const CDN = 'https://www.pocketgrimoire.co.uk';
+  const TEAM_COMP = {
+    5:{townsfolk:3,outsider:0,minion:1,demon:1},
+    6:{townsfolk:3,outsider:1,minion:1,demon:1},
+    7:{townsfolk:5,outsider:0,minion:1,demon:1},
+    8:{townsfolk:5,outsider:1,minion:1,demon:1},
+    9:{townsfolk:5,outsider:2,minion:1,demon:1},
+    10:{townsfolk:7,outsider:0,minion:2,demon:1},
+    11:{townsfolk:7,outsider:1,minion:2,demon:1},
+    12:{townsfolk:7,outsider:2,minion:2,demon:1},
+    13:{townsfolk:9,outsider:0,minion:3,demon:1},
+    14:{townsfolk:9,outsider:1,minion:3,demon:1},
+    15:{townsfolk:9,outsider:2,minion:3,demon:1},
   };
+  const TEAM_LABELS = {townsfolk:'Vilatà',outsider:'Foraster',minion:'Esbirro',demon:'Dimoni',traveller:'Viatger',fabled:'Llegenda'};
 
-  // --- State ---
-  let hat         = [];   // characters in the hat (ALL_CHARS entries + custom)
-  let playerCount = null;
-  let lastDraw    = null; // { assigned: [{char,player}], farols: [char] }
+  // Load character data
+  let ALL_CHARS = [];
+  try {
+    const res = await fetch('/data/characters.json');
+    ALL_CHARS = await res.json();
+    ALL_CHARS = ALL_CHARS.filter(c => ['tb','bmr','snv'].includes(c.edition));
+  } catch(e) { console.error('Error loading characters:', e); }
 
-  // --- Persistence ---
+  // State
+  let hat = [], playerCount = null, lastDraw = null;
+  let currentEdFilter = 'all';
+
   function loadState() {
     try {
       const s = JSON.parse(localStorage.getItem('botc_hat') || '{}');
-      hat         = s.hat         || [];
+      hat = s.hat || [];
       playerCount = s.playerCount || null;
-      lastDraw    = s.lastDraw    || null;
+      lastDraw = s.lastDraw || null;
+      const custom = JSON.parse(localStorage.getItem('botc_custom_chars') || '[]');
+      custom.forEach(c => { if (!ALL_CHARS.find(x => x.id === c.id)) ALL_CHARS.push(c); });
     } catch(_) {}
   }
 
   function saveState() {
-    localStorage.setItem('botc_hat', JSON.stringify({ hat, playerCount, lastDraw }));
-    // Also keep botc_setup in sync so grimori / night-order can read it
-    localStorage.setItem('botc_setup', JSON.stringify({
-      chars: hat.map(c => c.id),
-      count: playerCount,
-    }));
+    localStorage.setItem('botc_hat', JSON.stringify({hat, playerCount, lastDraw}));
+    localStorage.setItem('botc_setup', JSON.stringify({chars: hat.map(c => c.id), count: playerCount}));
   }
 
-  // --- Image ---
   function imgUrl(id) {
-    // Custom chars have no image
     if (!id || id.startsWith('custom_')) return null;
     return `${CDN}/build/img/roles/${id}_g.webp`;
   }
 
-  function tokenHtml(c, extraClass = '') {
+  function tokenHtml(c) {
     const url = imgUrl(c.id);
-    return `
-      <div class="hat-token team-${c.team} ${extraClass}" title="${c.name}: ${c.ability || ''}">
-        ${url
-          ? `<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`
-          : `<span class="custom-initial">${c.name[0]}</span>`
-        }
-        <div class="hat-token-label">${c.name}</div>
-      </div>
-    `;
+    return `<div class="hat-token team-${c.team}" title="${c.name}">
+      ${url ? `<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>` : `<span class="custom-initial">${c.name[0]}</span>`}
+      <div class="hat-token-label">${c.name}</div>
+    </div>`;
   }
 
-  // --- Hat render ---
   function renderHat() {
-    const empty  = document.getElementById('hat-empty');
+    const empty = document.getElementById('hat-empty');
     const tokens = document.getElementById('hat-tokens');
-
+    if (!empty || !tokens) return;
     if (hat.length === 0) {
-      empty.style.display  = '';
+      empty.style.display = '';
       tokens.style.display = 'none';
-      checkRandomizeReady();
-      return;
+    } else {
+      empty.style.display = 'none';
+      tokens.style.display = '';
+      tokens.innerHTML = hat.map((c, i) => `
+        <div class="hat-item">
+          ${tokenHtml(c)}
+          <button class="hat-remove-btn" data-idx="${i}" title="Treure del barret">✕</button>
+        </div>
+      `).join('');
+      tokens.querySelectorAll('.hat-remove-btn').forEach(btn => {
+        btn.addEventListener('click', () => { hat.splice(+btn.dataset.idx, 1); saveState(); renderHat(); renderSelectorGrid(); });
+      });
     }
-
-    empty.style.display  = 'none';
-    tokens.style.display = '';
-
-    tokens.innerHTML = hat.map((c, i) => `
-      <div class="hat-item" data-idx="${i}">
-        ${tokenHtml(c)}
-        <button class="hat-remove-btn" onclick="removeFromHat(${i})" title="Treure del barret">✕</button>
-      </div>
-    `).join('');
-
-    checkRandomizeReady();
+    checkReady();
   }
 
-  function removeFromHat(idx) {
-    hat.splice(idx, 1);
-    saveState();
-    renderHat();
-    renderSelectorGrid(currentEdFilter, '');
+  function checkReady() {
+    const btn = document.getElementById('btn-randomize');
+    if (btn) btn.disabled = !(hat.length >= 1 && playerCount);
   }
 
   function addToHat(char) {
-    // Avoid duplicates
     if (hat.find(c => c.id === char.id)) return;
     hat.push(char);
     saveState();
     renderHat();
   }
 
-  function resetHat() {
-    if (!confirm('Netejar el barret i totes les dades? Aquesta acció no es pot desfer.')) return;
-    hat = [];
-    playerCount = null;
-    lastDraw    = null;
-    saveState();
-    localStorage.removeItem('botc_game');
-    renderHat();
-    document.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('comp-bar').style.display = 'none';
-    hideFarol();
-    document.getElementById('randomize-info').textContent = '';
-  }
+  // Player count
+  document.querySelectorAll('.count-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      playerCount = +btn.dataset.count;
+      const comp = TEAM_COMP[playerCount];
+      if (comp) {
+        const bar = document.getElementById('comp-bar');
+        bar.style.display = '';
+        bar.querySelector('.townsfolk-chip').textContent = `${comp.townsfolk} Vilatans`;
+        bar.querySelector('.outsider-chip').textContent  = `${comp.outsider} Forasters`;
+        bar.querySelector('.minion-chip').textContent    = `${comp.minion} Esbirros`;
+        bar.querySelector('.demon-chip').textContent     = `${comp.demon} Dimoni`;
+      }
+      saveState();
+      checkReady();
+    });
+  });
 
-  // --- Randomize ready check ---
-  function checkRandomizeReady() {
-    const btn = document.getElementById('randomize-btn');
-    btn.disabled = !(hat.length >= 1 && playerCount);
-  }
-
-  // --- Player count ---
-  function selectCount(btn) {
-    document.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    playerCount = parseInt(btn.dataset.count);
-
-    const comp = TEAM_COMP[playerCount];
-    if (comp) {
-      const bar = document.getElementById('comp-bar');
-      bar.style.display = '';
-      bar.querySelector('.townsfolk-chip').textContent = `${comp.townsfolk} Vilatans`;
-      bar.querySelector('.outsider-chip').textContent  = `${comp.outsider} Forasters`;
-      bar.querySelector('.minion-chip').textContent    = `${comp.minion} Esbirros`;
-      bar.querySelector('.demon-chip').textContent     = `${comp.demon} Dimoni`;
-    }
-
-    saveState();
-    checkRandomizeReady();
-  }
-
-  // --- Randomize ---
-  function shuffle(arr) {
-    const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  }
-
-  function randomize() {
+  // Randomize
+  document.getElementById('btn-randomize').addEventListener('click', () => {
     if (!playerCount || hat.length === 0) return;
-
-    const comp = TEAM_COMP[playerCount] || {
-      townsfolk: Math.max(1, playerCount - 3),
-      outsider: 0,
-      minion: 1,
-      demon: 1,
-    };
-
-    const townsfolkPool = shuffle(hat.filter(c => c.team === 'townsfolk'));
-    const outsiderPool  = shuffle(hat.filter(c => c.team === 'outsider'));
-    const minionPool    = shuffle(hat.filter(c => c.team === 'minion'));
-    const demonPool     = shuffle(hat.filter(c => c.team === 'demon'));
-
-    const assigned = [];
-
-    // Draw demon
-    if (demonPool.length > 0) assigned.push(...demonPool.slice(0, comp.demon));
-    // Draw minions
-    if (minionPool.length > 0) assigned.push(...minionPool.slice(0, comp.minion));
-    // Draw outsiders
-    if (outsiderPool.length > 0) assigned.push(...outsiderPool.slice(0, comp.outsider));
-    // Fill remaining with townsfolk
+    const comp = TEAM_COMP[playerCount] || {townsfolk: Math.max(1, playerCount-3), outsider:0, minion:1, demon:1};
+    const shuffle = arr => { const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+    const pool = { townsfolk: shuffle(hat.filter(c=>c.team==='townsfolk')), outsider: shuffle(hat.filter(c=>c.team==='outsider')), minion: shuffle(hat.filter(c=>c.team==='minion')), demon: shuffle(hat.filter(c=>c.team==='demon')) };
+    let assigned = [];
+    assigned.push(...pool.demon.slice(0, comp.demon));
+    assigned.push(...pool.minion.slice(0, comp.minion));
+    assigned.push(...pool.outsider.slice(0, comp.outsider));
     const needed = playerCount - assigned.length;
-    assigned.push(...townsfolkPool.slice(0, needed));
-
-    // If not enough from composition, fill rest randomly from hat
-    const assignedIds = new Set(assigned.map(c => c.id));
-    if (assigned.length < playerCount) {
-      const rest = shuffle(hat.filter(c => !assignedIds.has(c.id)));
-      assigned.push(...rest.slice(0, playerCount - assigned.length));
-    }
-
-    // Pick 3 Dimonis de Farol: townsfolk/outsider chars NOT in assigned
-    const usedIds = new Set(assigned.map(c => c.id));
-    const bluffPool = shuffle(
-      hat.filter(c => !usedIds.has(c.id) && (c.team === 'townsfolk' || c.team === 'outsider'))
-    );
-    const farols = bluffPool.slice(0, 3);
-
-    lastDraw = { assigned, farols };
+    assigned.push(...pool.townsfolk.slice(0, needed));
+    const usedIds = new Set(assigned.map(c=>c.id));
+    if (assigned.length < playerCount) assigned.push(...shuffle(hat.filter(c=>!usedIds.has(c.id))).slice(0, playerCount-assigned.length));
+    const usedIds2 = new Set(assigned.map(c=>c.id));
+    const farols = shuffle(hat.filter(c=>!usedIds2.has(c.id)&&(c.team==='townsfolk'||c.team==='outsider'))).slice(0,3);
+    lastDraw = {assigned, farols};
     saveState();
-
-    // Save to game state as players
-    const players = shuffle(assigned).map((c, i) => ({
-      id: Date.now() + i,
-      name: `Jugador ${i + 1}`,
-      charId: c.id,
-      dead: false,
-      reminders: [],
-      customChar: c.id.startsWith('custom_') ? c : null,
-    }));
-    localStorage.setItem('botc_game', JSON.stringify({ players, bluffs: farols.map(c=>c.id), notes: '' }));
-    localStorage.setItem('botc_custom_chars', JSON.stringify(
-      hat.filter(c => c.id.startsWith('custom_'))
-    ));
-
-    // Show result info
-    document.getElementById('randomize-info').innerHTML =
-      `<span class="randomize-ok">✓ ${assigned.length} personatge${assigned.length !== 1 ? 's' : ''} assignats</span>
-       <a href="/grimori" class="btn btn-primary btn-sm" style="text-decoration:none;margin-left:0.75rem">Obrir Grimori →</a>`;
-
+    const players = shuffle(assigned).map((c,i) => ({id:Date.now()+i, name:`Jugador ${i+1}`, charId:c.id, dead:false, reminders:[], customChar:c.id.startsWith('custom_')?c:null}));
+    localStorage.setItem('botc_game', JSON.stringify({players, bluffs:farols.map(c=>c.id), notes:''}));
+    localStorage.setItem('botc_custom_chars', JSON.stringify(hat.filter(c=>c.id.startsWith('custom_'))));
+    document.getElementById('randomize-info').innerHTML = `<span style="color:var(--green-light)">✓ ${assigned.length} personatges assignats</span> <a href="/grimori" class="btn btn-primary btn-sm" style="text-decoration:none;margin-left:0.75rem">Obrir Grimori →</a>`;
     showFarols(farols);
-  }
+  });
 
   function showFarols(farols) {
     const sec = document.getElementById('farol-section');
     const tok = document.getElementById('farol-tokens');
-    if (farols.length === 0) {
-      sec.style.display = 'none';
-      return;
-    }
+    if (!farols.length) { sec.style.display='none'; return; }
     sec.style.display = '';
     tok.innerHTML = farols.map(c => tokenHtml(c)).join('');
   }
 
-  function hideFarol() {
-    document.getElementById('farol-section').style.display = 'none';
-  }
-
-  // --- Character selector ---
-  let currentEdFilter = 'all';
-
-  function openCharSelector() {
+  // Character selector modal
+  document.getElementById('btn-add-char').addEventListener('click', () => {
     currentEdFilter = 'all';
-    document.querySelectorAll('.ed-btn').forEach(b => b.classList.toggle('active', b.dataset.ed === 'all'));
-    renderSelectorGrid('all', '');
+    document.querySelectorAll('.ed-btn').forEach(b => b.classList.toggle('active', b.dataset.ed==='all'));
     document.getElementById('selector-search').value = '';
+    renderSelectorGrid();
     document.getElementById('char-selector-modal').style.display = '';
-  }
+  });
+  document.getElementById('close-selector').addEventListener('click', () => { document.getElementById('char-selector-modal').style.display='none'; });
+  document.getElementById('char-selector-modal').addEventListener('click', e => { if(e.target===e.currentTarget) e.currentTarget.style.display='none'; });
 
-  function closeSelectorModal(e) {
-    if (!e || e.target.id === 'char-selector-modal') {
-      document.getElementById('char-selector-modal').style.display = 'none';
-    }
-  }
+  document.querySelectorAll('.ed-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.ed-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentEdFilter = btn.dataset.ed;
+      renderSelectorGrid();
+    });
+  });
 
-  function filterEdition(btn) {
-    document.querySelectorAll('.ed-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentEdFilter = btn.dataset.ed;
-    renderSelectorGrid(currentEdFilter, document.getElementById('selector-search').value.toLowerCase());
-  }
+  document.getElementById('selector-search').addEventListener('input', () => renderSelectorGrid());
 
-  function filterSelectorSearch(q) {
-    renderSelectorGrid(currentEdFilter, q.toLowerCase());
-  }
-
-  function renderSelectorGrid(ed, q) {
-    const inHat = new Set(hat.map(c => c.id));
-    let chars = ALL_CHARS;
-    if (ed !== 'all') chars = chars.filter(c => c.edition === ed);
-    if (q) chars = chars.filter(c => c.name.toLowerCase().includes(q));
-
+  function renderSelectorGrid() {
+    const q = (document.getElementById('selector-search')?.value||'').toLowerCase();
+    const inHat = new Set(hat.map(c=>c.id));
+    let chars = currentEdFilter==='all' ? ALL_CHARS : ALL_CHARS.filter(c=>c.edition===currentEdFilter);
+    if (q) chars = chars.filter(c=>c.name.toLowerCase().includes(q));
     const grid = document.getElementById('selector-grid');
-    if (chars.length === 0) {
-      grid.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:2rem">Cap resultat.</p>';
-      return;
-    }
-
+    if (!grid) return;
+    if (!chars.length) { grid.innerHTML='<p style="color:var(--text-muted);text-align:center;padding:2rem">Cap resultat.</p>'; return; }
     grid.innerHTML = chars.map(c => {
       const inH = inHat.has(c.id);
       const url = imgUrl(c.id);
-      return `
-        <button
-          class="sel-char ${inH ? 'in-hat' : ''} team-${c.team}"
-          onclick="${inH ? `removeFromHatById('${c.id}', this)` : `addCharFromSelector('${c.id}', this)`}"
-          title="${c.ability || ''}"
-        >
-          <div class="sel-img team-${c.team}">
-            ${url ? `<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>` : `<span>${c.name[0]}</span>`}
-          </div>
-          <span>${c.name}</span>
-          <div class="sel-overlay">${inH ? '✓' : '+'}</div>
-        </button>
-      `;
+      return `<button class="sel-char ${inH?'in-hat':''} team-${c.team}" data-id="${c.id}" title="${c.ability||''}">
+        <div class="sel-img team-${c.team}">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${c.name[0]}</span>`}</div>
+        <span>${c.name}</span>
+        <div class="sel-overlay">${inH?'✓':'+'}</div>
+      </button>`;
     }).join('');
+    grid.querySelectorAll('.sel-char').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const inH = hat.find(c=>c.id===id);
+        if (inH) {
+          hat = hat.filter(c=>c.id!==id);
+          btn.classList.remove('in-hat');
+          btn.querySelector('.sel-overlay').textContent = '+';
+        } else {
+          const char = ALL_CHARS.find(c=>c.id===id);
+          if (char) addToHat(char);
+          btn.classList.add('in-hat');
+          btn.querySelector('.sel-overlay').textContent = '✓';
+        }
+        saveState();
+      });
+    });
   }
 
-  function addCharFromSelector(id, btn) {
-    const char = ALL_CHARS.find(c => c.id === id);
-    if (!char) return;
-    addToHat(char);
-    btn.classList.add('in-hat');
-    btn.querySelector('.sel-overlay').textContent = '✓';
-    btn.onclick = () => { removeFromHatById(id, btn); };
-  }
-
-  function removeFromHatById(id, btn) {
-    hat = hat.filter(c => c.id !== id);
-    saveState();
-    renderHat();
-    if (btn) {
-      btn.classList.remove('in-hat');
-      btn.querySelector('.sel-overlay').textContent = '+';
-      btn.onclick = () => { addCharFromSelector(id, btn); };
-    }
-  }
-
-  // --- Create custom character ---
-  function openCreateCharModal() {
-    document.getElementById('cc-name').value    = '';
+  // Create character modal
+  document.getElementById('btn-create-char').addEventListener('click', () => {
+    document.getElementById('cc-name').value = '';
     document.getElementById('cc-ability').value = '';
-    document.getElementById('cc-team').value    = 'townsfolk';
+    document.getElementById('cc-team').value = 'townsfolk';
     document.querySelectorAll('[name="cc-align"]')[0].checked = true;
     document.getElementById('cc-error').style.display = 'none';
     document.getElementById('create-char-modal').style.display = '';
     document.getElementById('cc-name').focus();
-  }
-
-  function closeCreateModal(e) {
-    if (!e || e.target.id === 'create-char-modal') {
-      document.getElementById('create-char-modal').style.display = 'none';
-    }
-  }
-
-  function saveCustomChar() {
-    const name    = document.getElementById('cc-name').value.trim();
-    const ability = document.getElementById('cc-ability').value.trim();
-    const team    = document.getElementById('cc-team').value;
-    const align   = document.querySelector('[name="cc-align"]:checked')?.value || 'good';
-    const errEl   = document.getElementById('cc-error');
-
-    if (!name) {
-      errEl.textContent = 'El nom és obligatori.';
-      errEl.style.display = '';
-      return;
-    }
-
+  });
+  document.getElementById('close-create').addEventListener('click', () => { document.getElementById('create-char-modal').style.display='none'; });
+  document.getElementById('cancel-create').addEventListener('click', () => { document.getElementById('create-char-modal').style.display='none'; });
+  document.getElementById('create-char-modal').addEventListener('click', e => { if(e.target===e.currentTarget) e.currentTarget.style.display='none'; });
+  document.getElementById('save-create').addEventListener('click', () => {
+    const name = document.getElementById('cc-name').value.trim();
+    if (!name) { document.getElementById('cc-error').textContent='El nom és obligatori.'; document.getElementById('cc-error').style.display=''; return; }
     const custom = {
-      id:                 `custom_${Date.now()}`,
-      name,
-      ability,
-      team,
-      alignment:          align,
-      edition:            'custom',
-      firstNight:         0,
-      firstNightReminder: '',
-      otherNight:         0,
-      otherNightReminder: '',
-      reminders:          [],
-      setup:              false,
-      image:              '',
+      id:`custom_${Date.now()}`, name,
+      ability: document.getElementById('cc-ability').value.trim(),
+      team: document.getElementById('cc-team').value,
+      alignment: document.querySelector('[name="cc-align"]:checked')?.value||'good',
+      edition:'custom', firstNight:0, firstNightReminder:'', otherNight:0, otherNightReminder:'', reminders:[], setup:false, image:'',
     };
-
     addToHat(custom);
-    closeCreateModal();
-  }
+    document.getElementById('create-char-modal').style.display = 'none';
+  });
 
-  // --- Character sheet ---
-  function openCharSheet() {
+  // Character sheet modal
+  document.getElementById('btn-sheet').addEventListener('click', () => {
     const content = document.getElementById('sheet-content');
-    if (hat.length === 0) {
-      content.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:2rem">El barret és buit.</p>';
-    } else {
+    if (!hat.length) { content.innerHTML='<p style="color:var(--text-muted);text-align:center;padding:2rem">El barret és buit.</p>'; }
+    else {
       const byTeam = {};
-      hat.forEach(c => {
-        if (!byTeam[c.team]) byTeam[c.team] = [];
-        byTeam[c.team].push(c);
-      });
-      const order = ['townsfolk','outsider','minion','demon','traveller','fabled'];
-      content.innerHTML = order.filter(t => byTeam[t]?.length > 0).map(team => `
+      hat.forEach(c => { (byTeam[c.team]||(byTeam[c.team]=[])).push(c); });
+      content.innerHTML = ['townsfolk','outsider','minion','demon','traveller','fabled'].filter(t=>byTeam[t]?.length).map(team => `
         <div style="margin-bottom:1.25rem">
-          <h4 class="team-title">
-            <span class="badge team-${team}">${TEAM_LABELS[team] || team}</span>
-          </h4>
-          <div class="sheet-char-list">
-            ${byTeam[team].map(c => {
-              const url = imgUrl(c.id);
-              return `
-                <div class="sheet-char">
-                  <div class="sheet-token team-${c.team}">
-                    ${url ? `<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>` : `<span>${c.name[0]}</span>`}
-                  </div>
-                  <div>
-                    <div style="font-size:0.9rem;font-weight:600">${c.name}</div>
-                    <div style="font-size:0.78rem;color:var(--text-muted)">${c.ability || ''}</div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
+          <h4 class="team-title"><span class="badge team-${team}">${TEAM_LABELS[team]||team}</span></h4>
+          <div class="sheet-char-list">${byTeam[team].map(c => {
+            const url = imgUrl(c.id);
+            return `<div class="sheet-char">
+              <div class="sheet-token team-${c.team}">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${c.name[0]}</span>`}</div>
+              <div><div style="font-size:.9rem;font-weight:600">${c.name}</div><div style="font-size:.78rem;color:var(--text-muted)">${c.ability||''}</div></div>
+            </div>`;
+          }).join('')}</div>
         </div>
       `).join('');
     }
     document.getElementById('sheet-modal').style.display = '';
-  }
+  });
+  document.getElementById('close-sheet').addEventListener('click', () => { document.getElementById('sheet-modal').style.display='none'; });
+  document.getElementById('sheet-modal').addEventListener('click', e => { if(e.target===e.currentTarget) e.currentTarget.style.display='none'; });
 
-  function closeSheetModal(e) {
-    if (!e || e.target.id === 'sheet-modal') {
-      document.getElementById('sheet-modal').style.display = 'none';
-    }
-  }
+  // Reset
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    if (!confirm('Netejar el barret i totes les dades?')) return;
+    hat=[]; playerCount=null; lastDraw=null;
+    saveState();
+    localStorage.removeItem('botc_game');
+    document.querySelectorAll('.count-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('comp-bar').style.display='none';
+    document.getElementById('farol-section').style.display='none';
+    document.getElementById('randomize-info').textContent='';
+    renderHat();
+  });
 
-  // --- Init ---
+  // Init
   loadState();
   renderHat();
-
   if (playerCount) {
     const btn = document.querySelector(`[data-count="${playerCount}"]`);
-    if (btn) selectCount(btn);
+    if (btn) btn.click();
   }
-
-  if (lastDraw?.farols?.length > 0) {
-    showFarols(lastDraw.farols.map(c =>
-      hat.find(h => h.id === c.id) || c
-    ).filter(Boolean));
-  }
-
-  // Expose all onclick-referenced functions to global scope
-  // (Astro bundles scripts as ES modules — not global by default)
-  Object.assign(window, {
-    openCharSelector,
-    openCreateCharModal,
-    openCharSheet,
-    resetHat,
-    selectCount,
-    randomize,
-    filterEdition,
-    filterSelectorSearch,
-    closeSelectorModal,
-    closeCreateModal,
-    closeSheetModal,
-    removeFromHat,
-    removeFromHatById,
-    addCharFromSelector,
-    saveCustomChar,
-    toggleBluff,
-  });
+  if (lastDraw?.farols?.length) showFarols(lastDraw.farols.map(c=>hat.find(h=>h.id===c.id)||c).filter(Boolean));
+})();
 </script>
 
 <style>
-.setup-page {
-  padding: 2rem 1rem 4rem;
-  max-width: 1100px;
-}
-
-/* Header */
-.hat-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-.hat-icon { font-size: 3rem; line-height: 1; }
-
-/* Action bar */
-.action-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-}
-
-/* Hat area */
-.hat-area {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  min-height: 140px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  position: relative;
-}
-
-.hat-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  min-height: 110px;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
-.hat-tokens {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  padding: 0.25rem;
-}
-
-.hat-item {
-  position: relative;
-}
-
-.hat-remove-btn {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--red);
-  color: #fff;
-  font-size: 0.6rem;
-  line-height: 1;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  cursor: pointer;
-  z-index: 5;
-}
-.hat-item:hover .hat-remove-btn { display: flex; }
-
-.hat-token {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  border: 2px solid var(--team-color, var(--border-accent));
-  background: var(--team-bg, rgba(196,136,42,0.1));
-  overflow: hidden;
-  position: relative;
-  cursor: default;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.hat-token img { width: 100%; height: 100%; object-fit: cover; }
-
-.custom-initial {
-  font-size: 1.4rem;
-  font-weight: bold;
-  color: var(--text-muted);
-}
-
-.hat-token-label {
-  position: absolute;
-  bottom: calc(100% + 4px);
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.62rem;
-  color: var(--text-muted);
-  white-space: nowrap;
-  background: rgba(10,5,5,0.9);
-  padding: 2px 5px;
-  border-radius: 3px;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-.hat-item:hover .hat-token-label { opacity: 1; }
-
-/* Randomize section */
-.randomize-section {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1rem 1.25rem;
-  margin-bottom: 1.5rem;
-}
-
-.player-count-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.count-label {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  margin-right: 0.25rem;
-}
-
-.count-btn {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.count-btn:hover { border-color: var(--border-accent); color: var(--text); }
-.count-btn.active { background: var(--accent); border-color: var(--accent); color: #0a0505; }
-
-.comp-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  align-items: center;
-  margin-bottom: 1rem;
-  font-size: 0.8rem;
-}
-.comp-lbl { color: var(--text-dim); margin-right: 0.25rem; }
-
-.comp-chip {
-  padding: 0.15rem 0.5rem;
-  border-radius: 99px;
-  font-size: 0.75rem;
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  background: var(--bg);
-}
-.townsfolk-chip { border-color: #3a6aaa; color: #3a6aaa; }
-.outsider-chip  { border-color: #3a8a5a; color: #3a8a5a; }
-.minion-chip    { border-color: #aa3a5a; color: #aa3a5a; }
-.demon-chip     { border-color: #8a2020; color: #c04040; }
-
-.randomize-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.randomize-info { font-size: 0.85rem; color: var(--text-muted); }
-.randomize-ok { color: var(--green-light); }
-
-/* Farol section */
-.farol-section {
-  background: rgba(139,26,26,0.08);
-  border: 1px solid var(--red);
-  border-radius: var(--radius);
-  padding: 1rem 1.25rem;
-  margin-bottom: 1.5rem;
-}
-
-.farol-tokens {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 0.75rem;
-}
-
-/* Edition filter */
-.edition-filter {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
-.ed-btn {
-  padding: 0.3rem 0.7rem;
-  border-radius: 99px;
-  font-size: 0.8rem;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.ed-btn:hover { border-color: var(--border-accent); color: var(--text); }
-.ed-btn.active { background: rgba(196,136,42,0.15); border-color: var(--accent); color: var(--accent); }
-
-/* Selector grid */
-.selector-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
-  gap: 0.5rem;
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.sel-char {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.5rem 0.25rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  cursor: pointer;
-  font-size: 0.65rem;
-  color: var(--text-muted);
-  transition: all 0.15s;
-  position: relative;
-  overflow: hidden;
-}
-.sel-char:hover { border-color: var(--accent); color: var(--text); }
-.sel-char.in-hat { background: rgba(196,136,42,0.08); border-color: var(--accent); }
-
-.sel-img {
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  border: 1.5px solid var(--team-color, var(--border-accent));
-  background: var(--team-bg);
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-.sel-img img { width: 100%; height: 100%; object-fit: cover; }
-
-.sel-overlay {
-  position: absolute;
-  top: 2px;
-  right: 4px;
-  font-size: 0.7rem;
-  color: var(--accent);
-  font-weight: bold;
-}
-
-/* Form */
-.form-group { margin-bottom: 0.85rem; }
-.form-label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.3rem; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.form-error { color: var(--red-light); font-size: 0.8rem; margin-top: 0.25rem; }
-
-.radio-group { display: flex; gap: 1rem; margin-top: 0.25rem; }
-.radio-label {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-/* Sheet */
-.sheet-char-list { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.6rem; }
-.sheet-char { display: flex; align-items: center; gap: 0.75rem; }
-.sheet-token {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 1.5px solid var(--team-color, var(--border-accent));
-  background: var(--team-bg);
-  overflow: hidden;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  color: var(--text-muted);
-}
-.sheet-token img { width: 100%; height: 100%; object-fit: cover; }
-
-.team-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-@media (max-width: 640px) {
-  .form-row { grid-template-columns: 1fr; }
-  .action-bar { gap: 0.4rem; }
-}
+.setup-page { padding:2rem 1rem 4rem; max-width:1100px; }
+.hat-header { display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; }
+.hat-icon { font-size:3rem; line-height:1; }
+.action-bar { display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1.5rem; }
+.hat-area { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); min-height:140px; padding:1rem; margin-bottom:1.5rem; }
+.hat-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.5rem; min-height:110px; color:var(--text-muted); font-size:0.9rem; }
+.hat-tokens { display:flex; flex-wrap:wrap; gap:0.75rem; padding:0.25rem; }
+.hat-item { position:relative; }
+.hat-remove-btn { position:absolute; top:-4px; right:-4px; width:18px; height:18px; border-radius:50%; background:var(--red); color:#fff; font-size:0.6rem; line-height:1; display:none; align-items:center; justify-content:center; border:none; cursor:pointer; z-index:5; }
+.hat-item:hover .hat-remove-btn { display:flex; }
+.hat-token { width:64px; height:64px; border-radius:50%; border:2px solid var(--team-color,var(--border-accent)); background:var(--team-bg,rgba(196,136,42,.1)); overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center; }
+.hat-token img { width:100%; height:100%; object-fit:cover; }
+.custom-initial { font-size:1.4rem; font-weight:bold; color:var(--text-muted); }
+.hat-token-label { position:absolute; bottom:calc(100% + 4px); left:50%; transform:translateX(-50%); font-size:0.62rem; color:var(--text-muted); white-space:nowrap; background:rgba(10,5,5,.9); padding:2px 5px; border-radius:3px; pointer-events:none; opacity:0; transition:opacity .15s; }
+.hat-item:hover .hat-token-label { opacity:1; }
+.randomize-section { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:1rem 1.25rem; margin-bottom:1.5rem; }
+.player-count-row { display:flex; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.75rem; }
+.count-label { color:var(--text-muted); font-size:0.85rem; margin-right:0.25rem; }
+.count-btn { width:38px; height:38px; border-radius:50%; border:1px solid var(--border); background:var(--bg); color:var(--text-muted); font-size:0.85rem; font-weight:600; cursor:pointer; transition:all .15s; }
+.count-btn:hover { border-color:var(--border-accent); color:var(--text); }
+.count-btn.active { background:var(--accent); border-color:var(--accent); color:#0a0505; }
+.comp-bar { display:flex; flex-wrap:wrap; gap:0.4rem; align-items:center; margin-bottom:1rem; font-size:0.8rem; }
+.comp-lbl { color:var(--text-dim); margin-right:0.25rem; }
+.comp-chip { padding:.15rem .5rem; border-radius:99px; font-size:.75rem; border:1px solid var(--border); color:var(--text-muted); background:var(--bg); }
+.townsfolk-chip { border-color:#3a6aaa; color:#3a6aaa; }
+.outsider-chip  { border-color:#3a8a5a; color:#3a8a5a; }
+.minion-chip    { border-color:#aa3a5a; color:#aa3a5a; }
+.demon-chip     { border-color:#8a2020; color:#c04040; }
+.randomize-row { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
+.randomize-info { font-size:0.85rem; color:var(--text-muted); }
+.farol-section { background:rgba(139,26,26,.08); border:1px solid var(--red); border-radius:var(--radius); padding:1rem 1.25rem; margin-bottom:1.5rem; }
+.farol-tokens { display:flex; flex-wrap:wrap; gap:1rem; margin-top:0.75rem; }
+.edition-filter { display:flex; gap:0.4rem; flex-wrap:wrap; }
+.ed-btn { padding:.3rem .7rem; border-radius:99px; font-size:.8rem; background:var(--bg); border:1px solid var(--border); color:var(--text-muted); cursor:pointer; transition:all .15s; }
+.ed-btn:hover { border-color:var(--border-accent); color:var(--text); }
+.ed-btn.active { background:rgba(196,136,42,.15); border-color:var(--accent); color:var(--accent); }
+.selector-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(76px,1fr)); gap:0.5rem; max-height:400px; overflow-y:auto; }
+.sel-char { display:flex; flex-direction:column; align-items:center; gap:0.3rem; padding:.5rem .25rem; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; font-size:.65rem; color:var(--text-muted); transition:all .15s; position:relative; }
+.sel-char:hover { border-color:var(--accent); color:var(--text); }
+.sel-char.in-hat { background:rgba(196,136,42,.08); border-color:var(--accent); }
+.sel-img { width:46px; height:46px; border-radius:50%; border:1.5px solid var(--team-color,var(--border-accent)); background:var(--team-bg); overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:.75rem; color:var(--text-muted); }
+.sel-img img { width:100%; height:100%; object-fit:cover; }
+.sel-overlay { position:absolute; top:2px; right:4px; font-size:.7rem; color:var(--accent); font-weight:bold; }
+.form-group { margin-bottom:0.85rem; }
+.form-label { display:block; font-size:.8rem; color:var(--text-muted); margin-bottom:.3rem; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.form-error { color:var(--red-light); font-size:.8rem; margin-top:.25rem; }
+.radio-group { display:flex; gap:1rem; margin-top:.25rem; }
+.radio-label { display:flex; align-items:center; gap:.4rem; font-size:.85rem; color:var(--text-muted); cursor:pointer; }
+.sheet-char-list { display:flex; flex-direction:column; gap:.6rem; margin-top:.6rem; }
+.sheet-char { display:flex; align-items:center; gap:.75rem; }
+.sheet-token { width:40px; height:40px; border-radius:50%; border:1.5px solid var(--team-color,var(--border-accent)); background:var(--team-bg); overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:.9rem; color:var(--text-muted); }
+.sheet-token img { width:100%; height:100%; object-fit:cover; }
+.team-title { display:flex; align-items:center; gap:.5rem; margin-bottom:.5rem; }
+@media(max-width:640px){.form-row{grid-template-columns:1fr}.action-bar{gap:.4rem}}
 </style>
