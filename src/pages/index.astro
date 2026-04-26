@@ -1,6 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { ca } from '../i18n/ca';
 import { charNamesCa } from '../data/char-names-ca';
 import { charAbilitiesCa } from '../data/char-abilities-ca';
 const charNamesCaJson     = JSON.stringify(charNamesCa);
@@ -10,43 +9,18 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 <Layout title="Barret Seleccionador" activePage="partida">
   <div class="setup-page container">
 
-    <div class="hat-header">
-      <div class="hat-icon">🎩</div>
-      <div>
-        <h1 class="page-title" style="text-align:left">Barret Seleccionador</h1>
-        <p class="page-subtitle" style="text-align:left">
-          Afegeix personatges al barret i randomitza la partida
-        </p>
+    <div class="page-header">
+      <h1 class="page-title">🎩 Barret Seleccionador</h1>
+      <p class="page-subtitle">Prepara la teva partida de Blood on the Clocktower</p>
+    </div>
+
+    <!-- Step 1: Player count -->
+    <div class="step-card" id="step-count">
+      <div class="step-header">
+        <span class="step-badge">1</span>
+        <div class="step-title">Quants jugadors sou?</div>
       </div>
-    </div>
-
-    <div class="action-bar">
-      <button class="btn btn-primary" id="btn-add-char">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-        Afegir Personatge
-      </button>
-      <button class="btn btn-ghost" id="btn-sheet">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
-        Full de Personatge
-      </button>
-      <button class="btn btn-danger" id="btn-reset">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-        Netejar
-      </button>
-    </div>
-
-    <div class="hat-area">
-      <div id="hat-empty" class="hat-empty">
-        <span style="font-size:3rem">🎩</span>
-        <p>El barret és buit.</p>
-        <p style="font-size:0.85rem;margin-top:0.25rem">Afegeix personatges per començar.</p>
-      </div>
-      <div id="hat-tokens" class="hat-tokens" style="display:none"></div>
-    </div>
-
-    <div class="randomize-section">
       <div class="player-count-row">
-        <span class="count-label">Jugadors:</span>
         {[5,6,7,8,9,10,11,12,13,14,15].map(n => (
           <button class="count-btn" data-count={n}>{n}</button>
         ))}
@@ -58,39 +32,86 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
         <span class="comp-chip minion-chip"></span>
         <span class="comp-chip demon-chip"></span>
       </div>
-      <div class="randomize-row">
-        <button class="btn btn-primary btn-lg" id="btn-randomize" disabled>
-          🎲 Randomitzar Partida
-        </button>
-        <div id="randomize-info" class="randomize-info"></div>
+    </div>
+
+    <!-- Step 2: Collections -->
+    <div class="step-card step-locked" id="step-collections">
+      <div class="step-header">
+        <span class="step-badge">2</span>
+        <div>
+          <div class="step-title">Quines col·leccions?</div>
+          <div class="step-desc">Pots seleccionar-ne múltiples</div>
+        </div>
+      </div>
+      <div class="collection-toggles">
+        <button class="col-btn" data-col="tb">🍺 Trouble Brewing</button>
+        <button class="col-btn" data-col="bmr">🌙 Bad Moon Rising</button>
+        <button class="col-btn" data-col="snv">🌹 Sects &amp; Violets</button>
+        <button class="col-btn" data-col="">📖 Experimental</button>
+        <button class="col-btn" data-col="custom">🐉 Paisings</button>
       </div>
     </div>
 
+    <!-- Step 3: Actions -->
+    <div class="step-card step-locked" id="step-actions">
+      <div class="step-header">
+        <span class="step-badge">3</span>
+        <div class="step-title">Com vols triar els personatges?</div>
+      </div>
+      <div class="mode-buttons">
+        <button class="btn btn-primary btn-lg" id="btn-randomize">🎲 Randomitzar</button>
+        <button class="btn btn-ghost btn-lg" id="btn-manual">✋ Triar Manualment</button>
+      </div>
+      <div id="randomize-info" class="step-info"></div>
+    </div>
+
+    <!-- Hat section (manual mode) -->
+    <div id="hat-section" class="step-card" style="display:none">
+      <div class="hat-section-header">
+        <div style="display:flex;align-items:center;gap:.6rem">
+          <span style="font-size:1.3rem">🎩</span>
+          <div class="step-title">Barret</div>
+          <span id="hat-count-badge" class="hat-count-badge"></span>
+        </div>
+        <div style="display:flex;gap:.4rem;align-items:center">
+          <button class="btn btn-primary btn-sm" id="btn-add-char">+ Afegir</button>
+          <button class="btn btn-ghost btn-sm" id="btn-sheet">📄 Full</button>
+          <button class="btn btn-danger btn-sm" id="btn-reset">🗑</button>
+        </div>
+      </div>
+      <div class="hat-area">
+        <div id="hat-empty" class="hat-empty">
+          <span style="font-size:2rem">🎩</span>
+          <p>El barret és buit. Afegeix personatges amb el botó de dalt.</p>
+        </div>
+        <div id="hat-tokens" class="hat-tokens" style="display:none"></div>
+      </div>
+      <div class="manual-actions">
+        <button class="btn btn-primary btn-lg" id="btn-randomize-manual" disabled>
+          🎲 Randomitzar des del Barret
+        </button>
+        <div id="manual-info" class="step-info"></div>
+      </div>
+    </div>
+
+    <!-- Farol result -->
     <div id="farol-section" class="farol-section" style="display:none">
-      <h3 class="section-title" style="font-size:1rem">🎭 Dimonis de Farol</h3>
-      <p class="section-subtitle" style="font-size:0.82rem">
-        Tres personatges que no estan en joc. El Dimoni pot fingir ser qualsevol d'aquests.
-      </p>
+      <h3 class="farol-title">🎭 Dimonis de Farol</h3>
+      <p class="farol-desc">Tres personatges que no estan en joc. El Dimoni pot fingir ser qualsevol d'aquests.</p>
       <div id="farol-tokens" class="farol-tokens"></div>
     </div>
 
   </div>
 
-  <!-- Character selector modal -->
+  <!-- Character picker modal -->
   <div id="char-selector-modal" class="modal-overlay" style="display:none">
     <div class="modal" style="max-width:760px">
       <div class="modal-header">
-        <h3>Selecciona Personatge</h3>
+        <h3>Selecciona Personatges</h3>
         <button class="modal-close btn" id="close-selector">✕</button>
       </div>
       <div class="modal-body">
-        <div class="edition-filter">
-          <button class="ed-btn active" data-ed="all">Tots</button>
-          <button class="ed-btn" data-ed="tb">🍺 Cerveseria</button>
-          <button class="ed-btn" data-ed="bmr">🌙 Lluna</button>
-          <button class="ed-btn" data-ed="snv">🌹 Sectes</button>
-        </div>
-        <input type="text" class="input" id="selector-search" placeholder="Cerca per nom..." style="margin:0.75rem 0" />
+        <input type="text" class="input" id="selector-search" placeholder="Cerca per nom..." style="margin-bottom:.75rem" />
         <div id="selector-grid" class="selector-grid"></div>
       </div>
     </div>
@@ -106,6 +127,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
       <div class="modal-body" id="sheet-content"></div>
     </div>
   </div>
+
 </Layout>
 
 <script id="char-names-ca-data"     type="application/json" set:html={charNamesCaJson}></script>
@@ -116,14 +138,15 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   const CDN = 'https://www.pocketgrimoire.co.uk';
   const NAMES_CA     = JSON.parse(document.getElementById('char-names-ca-data').textContent);
   const ABILITIES_CA = JSON.parse(document.getElementById('char-abilities-ca-data').textContent);
-  function getNameCa(id, nameEn)     { return NAMES_CA[id]     ?? nameEn; }
+  function getNameCa(id, nameEn)       { return NAMES_CA[id]     ?? nameEn; }
   function getAbilityCa(id, abilityEn) { return ABILITIES_CA[id] ?? abilityEn; }
+
   const TEAM_COMP = {
-    5:{townsfolk:3,outsider:0,minion:1,demon:1},
-    6:{townsfolk:3,outsider:1,minion:1,demon:1},
-    7:{townsfolk:5,outsider:0,minion:1,demon:1},
-    8:{townsfolk:5,outsider:1,minion:1,demon:1},
-    9:{townsfolk:5,outsider:2,minion:1,demon:1},
+    5: {townsfolk:3,outsider:0,minion:1,demon:1},
+    6: {townsfolk:3,outsider:1,minion:1,demon:1},
+    7: {townsfolk:5,outsider:0,minion:1,demon:1},
+    8: {townsfolk:5,outsider:1,minion:1,demon:1},
+    9: {townsfolk:5,outsider:2,minion:1,demon:1},
     10:{townsfolk:7,outsider:0,minion:2,demon:1},
     11:{townsfolk:7,outsider:1,minion:2,demon:1},
     12:{townsfolk:7,outsider:2,minion:2,demon:1},
@@ -132,297 +155,658 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     15:{townsfolk:9,outsider:2,minion:3,demon:1},
   };
   const TEAM_LABELS = {townsfolk:'Vilatà',outsider:'Foraster',minion:'Esbirro',demon:'Dimoni',traveller:'Viatger',fabled:'Llegenda'};
+  const HIDDEN_EDITIONS = ['syyl','hdcs'];
 
-  // Load character data
+  // ── Load characters ─────────────────────────────────────────────
   let ALL_CHARS = [];
   try {
     const res = await fetch('/data/characters.json');
-    ALL_CHARS = await res.json();
-    ALL_CHARS = ALL_CHARS.filter(c => ['tb','bmr','snv'].includes(c.edition));
+    ALL_CHARS = (await res.json()).filter(c => !HIDDEN_EDITIONS.includes(c.edition));
   } catch(e) { console.error('Error loading characters:', e); }
 
-  // State
-  let hat = [], playerCount = null, lastDraw = null;
-  let currentEdFilter = 'all';
+  // ── State ────────────────────────────────────────────────────────
+  let playerCount = null;
+  let selectedCollections = new Set();
+  let hat = [];
+  let lastDraw = null;
 
   function loadState() {
     try {
       const s = JSON.parse(localStorage.getItem('botc_hat') || '{}');
-      hat = s.hat || [];
+      hat         = s.hat         || [];
       playerCount = s.playerCount || null;
-      lastDraw = s.lastDraw || null;
+      lastDraw    = s.lastDraw    || null;
+      selectedCollections = new Set(s.collections || []);
+    } catch(_) {}
+    try {
       const custom = JSON.parse(localStorage.getItem('botc_custom_chars') || '[]');
       custom.forEach(c => { if (!ALL_CHARS.find(x => x.id === c.id)) ALL_CHARS.push(c); });
     } catch(_) {}
   }
 
   function saveState() {
-    localStorage.setItem('botc_hat', JSON.stringify({hat, playerCount, lastDraw}));
-    localStorage.setItem('botc_setup', JSON.stringify({chars: hat.map(c => c.id), count: playerCount}));
+    localStorage.setItem('botc_hat', JSON.stringify({
+      hat, playerCount, lastDraw,
+      collections: [...selectedCollections],
+    }));
+    localStorage.setItem('botc_setup', JSON.stringify({
+      chars: hat.map(c => c.id), count: playerCount,
+    }));
   }
 
+  // ── Helpers ──────────────────────────────────────────────────────
   function imgUrl(id) {
     if (!id || id.startsWith('custom_')) return null;
     return `${CDN}/build/img/roles/${id}_g.webp`;
   }
 
-  function tokenHtml(c) {
-    const url = imgUrl(c.id);
-    return `<div class="hat-token team-${c.team}" title="${getNameCa(c.id, c.name)}">
-      ${url ? `<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>` : `<span class="custom-initial">${getNameCa(c.id, c.name)[0]}</span>`}
-      <div class="hat-token-label">${getNameCa(c.id, c.name)}</div>
+  function collectionPool() {
+    return ALL_CHARS.filter(c => selectedCollections.has(c.edition));
+  }
+
+  function tokenHtml(c, removable, idx) {
+    const url  = imgUrl(c.id);
+    const name = getNameCa(c.id, c.name);
+    const img  = url
+      ? `<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`
+      : `<span class="custom-initial">${name[0]}</span>`;
+    return `<div class="hat-item">
+      <div class="hat-token team-${c.team}" title="${name}">${img}</div>
+      <div class="hat-token-label">${name}</div>
+      ${removable ? `<button class="hat-remove-btn" data-idx="${idx}" title="Treure">✕</button>` : ''}
     </div>`;
   }
 
+  // ── Step visibility ───────────────────────────────────────────────
+  function updateSteps() {
+    const hasCount = !!playerCount;
+    const hasCols  = selectedCollections.size > 0;
+    document.getElementById('step-collections').classList.toggle('step-locked', !hasCount);
+    document.getElementById('step-actions').classList.toggle('step-locked', !hasCount || !hasCols);
+  }
+
+  // ── Composition bar ───────────────────────────────────────────────
+  function updateCompBar() {
+    const bar = document.getElementById('comp-bar');
+    const comp = playerCount && TEAM_COMP[playerCount];
+    if (!comp) { bar.style.display = 'none'; return; }
+    bar.style.display = '';
+    bar.querySelector('.townsfolk-chip').textContent = `${comp.townsfolk} Vilatans`;
+    bar.querySelector('.outsider-chip').textContent  = `${comp.outsider} Foraster${comp.outsider!==1?'s':''}`;
+    bar.querySelector('.minion-chip').textContent    = `${comp.minion} Esbirro${comp.minion!==1?'s':''}`;
+    bar.querySelector('.demon-chip').textContent     = `${comp.demon} Dimoni`;
+  }
+
+  // ── Hat rendering ─────────────────────────────────────────────────
   function renderHat() {
-    const empty = document.getElementById('hat-empty');
+    const empty  = document.getElementById('hat-empty');
     const tokens = document.getElementById('hat-tokens');
+    const badge  = document.getElementById('hat-count-badge');
     if (!empty || !tokens) return;
-    if (hat.length === 0) {
-      empty.style.display = '';
+    if (badge) badge.textContent = hat.length ? String(hat.length) : '';
+    if (!hat.length) {
+      empty.style.display  = '';
       tokens.style.display = 'none';
     } else {
-      empty.style.display = 'none';
+      empty.style.display  = 'none';
       tokens.style.display = '';
-      tokens.innerHTML = hat.map((c, i) => `
-        <div class="hat-item">
-          ${tokenHtml(c)}
-          <button class="hat-remove-btn" data-idx="${i}" title="Treure del barret">✕</button>
-        </div>
-      `).join('');
+      tokens.innerHTML = hat.map((c,i) => tokenHtml(c, true, i)).join('');
       tokens.querySelectorAll('.hat-remove-btn').forEach(btn => {
-        btn.addEventListener('click', () => { hat.splice(+btn.dataset.idx, 1); saveState(); renderHat(); renderSelectorGrid(); });
+        btn.addEventListener('click', () => {
+          hat.splice(+btn.dataset.idx, 1);
+          saveState(); renderHat(); renderSelectorGrid();
+        });
       });
     }
-    checkReady();
+    checkManualReady();
   }
 
-  function checkReady() {
-    const btn = document.getElementById('btn-randomize');
-    if (btn) btn.disabled = !(hat.length >= 1 && playerCount);
+  function checkManualReady() {
+    const btn  = document.getElementById('btn-randomize-manual');
+    const info = document.getElementById('manual-info');
+    if (!btn) return;
+    const enough = playerCount && hat.length >= playerCount;
+    btn.disabled = !enough;
+    if (playerCount && hat.length < playerCount) {
+      const need = playerCount - hat.length;
+      info.innerHTML = `<span style="color:var(--text-muted)">Cal ${need} personatge${need!==1?'s':''} més</span>`;
+    } else {
+      info.textContent = '';
+    }
   }
 
-  function addToHat(char) {
-    if (hat.find(c => c.id === char.id)) return;
-    hat.push(char);
-    saveState();
-    renderHat();
-  }
-
-  // Player count
+  // ── Player count buttons ──────────────────────────────────────────
   document.querySelectorAll('.count-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       playerCount = +btn.dataset.count;
-      const comp = TEAM_COMP[playerCount];
-      if (comp) {
-        const bar = document.getElementById('comp-bar');
-        bar.style.display = '';
-        bar.querySelector('.townsfolk-chip').textContent = `${comp.townsfolk} Vilatans`;
-        bar.querySelector('.outsider-chip').textContent  = `${comp.outsider} Forasters`;
-        bar.querySelector('.minion-chip').textContent    = `${comp.minion} Esbirros`;
-        bar.querySelector('.demon-chip').textContent     = `${comp.demon} Dimoni`;
-      }
-      saveState();
-      checkReady();
+      updateCompBar(); updateSteps(); saveState(); checkManualReady();
     });
   });
 
-  // Randomize
-  document.getElementById('btn-randomize').addEventListener('click', () => {
-    if (!playerCount || hat.length === 0) return;
-    const comp = TEAM_COMP[playerCount] || {townsfolk: Math.max(1, playerCount-3), outsider:0, minion:1, demon:1};
-    const shuffle = arr => { const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
-    const pool = { townsfolk: shuffle(hat.filter(c=>c.team==='townsfolk')), outsider: shuffle(hat.filter(c=>c.team==='outsider')), minion: shuffle(hat.filter(c=>c.team==='minion')), demon: shuffle(hat.filter(c=>c.team==='demon')) };
-    let assigned = [];
-    assigned.push(...pool.demon.slice(0, comp.demon));
-    assigned.push(...pool.minion.slice(0, comp.minion));
-    assigned.push(...pool.outsider.slice(0, comp.outsider));
-    const needed = playerCount - assigned.length;
-    assigned.push(...pool.townsfolk.slice(0, needed));
-    const usedIds = new Set(assigned.map(c=>c.id));
-    if (assigned.length < playerCount) assigned.push(...shuffle(hat.filter(c=>!usedIds.has(c.id))).slice(0, playerCount-assigned.length));
-    const usedIds2 = new Set(assigned.map(c=>c.id));
-    const farols = shuffle(hat.filter(c=>!usedIds2.has(c.id)&&(c.team==='townsfolk'||c.team==='outsider'))).slice(0,3);
-    lastDraw = {assigned, farols};
-    saveState();
-    const players = shuffle(assigned).map((c,i) => ({id:Date.now()+i, name:`Jugador ${i+1}`, charId:c.id, dead:false, reminders:[], customChar:c.id.startsWith('custom_')?c:null}));
-    localStorage.setItem('botc_game', JSON.stringify({players, bluffs:farols.map(c=>c.id), notes:''}));
-    localStorage.setItem('botc_custom_chars', JSON.stringify(hat.filter(c=>c.id.startsWith('custom_'))));
-    document.getElementById('randomize-info').innerHTML = `<span style="color:var(--green-light)">✓ ${assigned.length} personatges assignats</span> <a href="/grimori" class="btn btn-primary btn-sm" style="text-decoration:none;margin-left:0.75rem">Obrir Grimori →</a>`;
-    showFarols(farols);
+  // ── Collection toggles ────────────────────────────────────────────
+  document.querySelectorAll('.col-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const col = btn.dataset.col;
+      if (selectedCollections.has(col)) {
+        selectedCollections.delete(col);
+        btn.classList.remove('active');
+      } else {
+        selectedCollections.add(col);
+        btn.classList.add('active');
+      }
+      updateSteps(); saveState();
+      if (document.getElementById('char-selector-modal').style.display !== 'none') renderSelectorGrid();
+    });
   });
 
-  function showFarols(farols) {
-    const sec = document.getElementById('farol-section');
-    const tok = document.getElementById('farol-tokens');
-    if (!farols.length) { sec.style.display='none'; return; }
+  // ── Randomize (from full pool) ────────────────────────────────────
+  document.getElementById('btn-randomize').addEventListener('click', () => {
+    if (!playerCount || !selectedCollections.size) return;
+    doRandomize(collectionPool(), document.getElementById('randomize-info'));
+  });
+
+  // ── Manual mode ───────────────────────────────────────────────────
+  document.getElementById('btn-manual').addEventListener('click', () => {
+    const sec = document.getElementById('hat-section');
     sec.style.display = '';
-    tok.innerHTML = farols.map(c => tokenHtml(c)).join('');
+    sec.scrollIntoView({behavior:'smooth', block:'start'});
+    renderHat();
+  });
+
+  document.getElementById('btn-randomize-manual').addEventListener('click', () => {
+    if (!playerCount || !hat.length) return;
+    doRandomize(hat, document.getElementById('manual-info'));
+  });
+
+  // ── Core randomize ────────────────────────────────────────────────
+  function doRandomize(pool, infoEl) {
+    const comp = TEAM_COMP[playerCount] || {townsfolk:Math.max(1,playerCount-3),outsider:0,minion:1,demon:1};
+    const shuffle = arr => { const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+    const byTeam = {
+      townsfolk: shuffle(pool.filter(c=>c.team==='townsfolk')),
+      outsider:  shuffle(pool.filter(c=>c.team==='outsider')),
+      minion:    shuffle(pool.filter(c=>c.team==='minion')),
+      demon:     shuffle(pool.filter(c=>c.team==='demon')),
+    };
+
+    // Check minimums
+    const missing = [];
+    if (byTeam.demon.length  < comp.demon)   missing.push(`${comp.demon} dimoni${comp.demon!==1?'s':''}`);
+    if (byTeam.minion.length < comp.minion)  missing.push(`${comp.minion} esbirro${comp.minion!==1?'s':''}`);
+    if (missing.length) {
+      infoEl.innerHTML = `<span style="color:var(--red-light)">⚠ No hi ha prou personatges. Falten: ${missing.join(', ')}</span>`;
+      return;
+    }
+
+    let assigned = [];
+    assigned.push(...byTeam.demon.slice(0, comp.demon));
+    assigned.push(...byTeam.minion.slice(0, comp.minion));
+    assigned.push(...byTeam.outsider.slice(0, comp.outsider));
+    assigned.push(...byTeam.townsfolk.slice(0, playerCount - assigned.length));
+
+    // Fill any remaining slots if townsfolk short
+    if (assigned.length < playerCount) {
+      const used = new Set(assigned.map(c=>c.id));
+      assigned.push(...shuffle(pool.filter(c=>!used.has(c.id))).slice(0, playerCount-assigned.length));
+    }
+
+    const used2   = new Set(assigned.map(c=>c.id));
+    const farols  = shuffle(pool.filter(c=>!used2.has(c.id)&&(c.team==='townsfolk'||c.team==='outsider'))).slice(0,3);
+    lastDraw = {assigned, farols};
+    saveState();
+
+    const players = shuffle(assigned).map((c,i) => ({
+      id: Date.now()+i,
+      name: `Jugador ${i+1}`,
+      charId: c.id,
+      dead: false,
+      reminders: [],
+      customChar: c.id.startsWith('custom_') ? c : null,
+    }));
+    localStorage.setItem('botc_game', JSON.stringify({players, bluffs: farols.map(c=>c.id), notes:''}));
+    localStorage.setItem('botc_custom_chars', JSON.stringify(pool.filter(c=>c.id.startsWith('custom_'))));
+
+    infoEl.innerHTML = `<span style="color:var(--green-light)">✓ ${assigned.length} personatges assignats</span><a href="/grimori" class="btn btn-primary btn-sm" style="text-decoration:none;margin-left:.75rem">Obrir Grimori →</a>`;
+    showFarols(farols, true);
   }
 
-  // Character selector modal
+  function showFarols(farols, scroll) {
+    const sec = document.getElementById('farol-section');
+    if (!farols.length) { sec.style.display='none'; return; }
+    sec.style.display = '';
+    document.getElementById('farol-tokens').innerHTML = farols.map(c => tokenHtml(c, false, -1)).join('');
+    if (scroll) sec.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+
+  // ── Picker modal ──────────────────────────────────────────────────
   document.getElementById('btn-add-char').addEventListener('click', () => {
-    currentEdFilter = 'all';
-    document.querySelectorAll('.ed-btn').forEach(b => b.classList.toggle('active', b.dataset.ed==='all'));
     document.getElementById('selector-search').value = '';
     renderSelectorGrid();
     document.getElementById('char-selector-modal').style.display = '';
   });
-  document.getElementById('close-selector').addEventListener('click', () => { document.getElementById('char-selector-modal').style.display='none'; });
-  document.getElementById('char-selector-modal').addEventListener('click', e => { if(e.target===e.currentTarget) e.currentTarget.style.display='none'; });
-
-  document.querySelectorAll('.ed-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.ed-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      currentEdFilter = btn.dataset.ed;
-      renderSelectorGrid();
-    });
+  document.getElementById('close-selector').addEventListener('click', () => {
+    document.getElementById('char-selector-modal').style.display = 'none';
   });
-
-  document.getElementById('selector-search').addEventListener('input', () => renderSelectorGrid());
+  document.getElementById('char-selector-modal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+  });
+  document.getElementById('selector-search').addEventListener('input', renderSelectorGrid);
 
   function renderSelectorGrid() {
-    const q = (document.getElementById('selector-search')?.value||'').toLowerCase();
+    const q     = (document.getElementById('selector-search')?.value||'').toLowerCase();
     const inHat = new Set(hat.map(c=>c.id));
-    let chars = currentEdFilter==='all' ? ALL_CHARS : ALL_CHARS.filter(c=>c.edition===currentEdFilter);
-    if (q) chars = chars.filter(c=>c.name.toLowerCase().includes(q) || getNameCa(c.id, c.name).toLowerCase().includes(q));
+    let chars   = collectionPool();
+    if (q) chars = chars.filter(c => getNameCa(c.id,c.name).toLowerCase().includes(q) || c.name.toLowerCase().includes(q));
     const grid = document.getElementById('selector-grid');
     if (!grid) return;
     if (!chars.length) { grid.innerHTML='<p style="color:var(--text-muted);text-align:center;padding:2rem">Cap resultat.</p>'; return; }
     grid.innerHTML = chars.map(c => {
-      const inH = inHat.has(c.id);
-      const url = imgUrl(c.id);
-      return `<button class="sel-char ${inH?'in-hat':''} team-${c.team}" data-id="${c.id}" title="${c.ability||''}">
-        <div class="sel-img team-${c.team}">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${getNameCa(c.id, c.name)[0]}</span>`}</div>
-        <span>${getNameCa(c.id, c.name)}</span>
+      const inH  = inHat.has(c.id);
+      const url  = imgUrl(c.id);
+      const name = getNameCa(c.id, c.name);
+      return `<button class="sel-char ${inH?'in-hat':''} team-${c.team}" data-id="${c.id}">
+        <div class="sel-img team-${c.team}">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${name[0]}</span>`}</div>
+        <span>${name}</span>
         <div class="sel-overlay">${inH?'✓':'+'}</div>
       </button>`;
     }).join('');
     grid.querySelectorAll('.sel-char').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.dataset.id;
-        const inH = hat.find(c=>c.id===id);
-        if (inH) {
+        if (hat.find(c=>c.id===id)) {
           hat = hat.filter(c=>c.id!==id);
           btn.classList.remove('in-hat');
           btn.querySelector('.sel-overlay').textContent = '+';
         } else {
           const char = ALL_CHARS.find(c=>c.id===id);
-          if (char) addToHat(char);
+          if (char) hat.push(char);
           btn.classList.add('in-hat');
           btn.querySelector('.sel-overlay').textContent = '✓';
         }
-        saveState();
+        saveState(); renderHat();
       });
     });
   }
 
-  // Character sheet modal
+  // ── Sheet modal ───────────────────────────────────────────────────
   document.getElementById('btn-sheet').addEventListener('click', () => {
+    const source  = lastDraw?.assigned?.length ? lastDraw.assigned : hat;
     const content = document.getElementById('sheet-content');
-    if (!hat.length) { content.innerHTML='<p style="color:var(--text-muted);text-align:center;padding:2rem">El barret és buit.</p>'; }
-    else {
+    if (!source.length) {
+      content.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:2rem">No hi ha personatges seleccionats.</p>';
+    } else {
       const byTeam = {};
-      hat.forEach(c => { (byTeam[c.team]||(byTeam[c.team]=[])).push(c); });
-      content.innerHTML = ['townsfolk','outsider','minion','demon','traveller','fabled'].filter(t=>byTeam[t]?.length).map(team => `
-        <div style="margin-bottom:1.25rem">
-          <h4 class="team-title"><span class="badge team-${team}">${TEAM_LABELS[team]||team}</span></h4>
+      source.forEach(c => { (byTeam[c.team]||(byTeam[c.team]=[])).push(c); });
+      content.innerHTML = ['townsfolk','outsider','minion','demon','traveller','fabled']
+        .filter(t=>byTeam[t]?.length)
+        .map(team => `<div style="margin-bottom:1.25rem">
+          <h4 style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem"><span class="badge team-${team}">${TEAM_LABELS[team]||team}</span></h4>
           <div class="sheet-char-list">${byTeam[team].map(c => {
-            const url = imgUrl(c.id);
+            const url  = imgUrl(c.id);
+            const name = getNameCa(c.id, c.name);
             return `<div class="sheet-char">
-              <div class="sheet-token team-${c.team}">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${getNameCa(c.id, c.name)[0]}</span>`}</div>
-              <div><div style="font-size:.9rem;font-weight:600">${getNameCa(c.id, c.name)}</div><div style="font-size:.78rem;color:var(--text-muted)">${getAbilityCa(c.id, c.ability||'')}</div></div>
+              <div class="sheet-token team-${c.team}">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${name[0]}</span>`}</div>
+              <div><div style="font-size:.9rem;font-weight:600">${name}</div><div style="font-size:.78rem;color:var(--text-muted)">${getAbilityCa(c.id,c.ability||'')}</div></div>
             </div>`;
           }).join('')}</div>
-        </div>
-      `).join('');
+        </div>`).join('');
     }
     document.getElementById('sheet-modal').style.display = '';
   });
-  document.getElementById('close-sheet').addEventListener('click', () => { document.getElementById('sheet-modal').style.display='none'; });
-  document.getElementById('sheet-modal').addEventListener('click', e => { if(e.target===e.currentTarget) e.currentTarget.style.display='none'; });
+  document.getElementById('close-sheet').addEventListener('click', () => {
+    document.getElementById('sheet-modal').style.display = 'none';
+  });
+  document.getElementById('sheet-modal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+  });
 
-  // Reset
+  // ── Reset ─────────────────────────────────────────────────────────
   document.getElementById('btn-reset').addEventListener('click', () => {
-    if (!confirm('Netejar el barret i totes les dades?')) return;
-    hat=[]; playerCount=null; lastDraw=null;
+    if (!confirm('Netejar el barret i el resultat?')) return;
+    hat = []; lastDraw = null;
     saveState();
     localStorage.removeItem('botc_game');
-    document.querySelectorAll('.count-btn').forEach(b=>b.classList.remove('active'));
-    document.getElementById('comp-bar').style.display='none';
-    document.getElementById('farol-section').style.display='none';
-    document.getElementById('randomize-info').textContent='';
+    document.getElementById('farol-section').style.display = 'none';
+    document.getElementById('randomize-info').textContent  = '';
     renderHat();
   });
 
-  // Init
+  // ── Init ──────────────────────────────────────────────────────────
   loadState();
-  renderHat();
+
   if (playerCount) {
-    const btn = document.querySelector(`[data-count="${playerCount}"]`);
-    if (btn) btn.click();
+    const btn = document.querySelector(`.count-btn[data-count="${playerCount}"]`);
+    if (btn) btn.classList.add('active');
+    updateCompBar();
   }
-  if (lastDraw?.farols?.length) showFarols(lastDraw.farols.map(c=>hat.find(h=>h.id===c.id)||c).filter(Boolean));
+  selectedCollections.forEach(col => {
+    const btn = document.querySelector(`.col-btn[data-col="${col}"]`);
+    if (btn) btn.classList.add('active');
+  });
+  updateSteps();
+
+  if (hat.length > 0) {
+    document.getElementById('hat-section').style.display = '';
+    renderHat();
+  }
+  if (lastDraw?.farols?.length) {
+    showFarols(lastDraw.farols, false);
+    const infoEl = hat.length > 0
+      ? document.getElementById('manual-info')
+      : document.getElementById('randomize-info');
+    if (lastDraw.assigned?.length) {
+      infoEl.innerHTML = `<span style="color:var(--green-light)">✓ ${lastDraw.assigned.length} personatges assignats</span><a href="/grimori" class="btn btn-primary btn-sm" style="text-decoration:none;margin-left:.75rem">Obrir Grimori →</a>`;
+    }
+  }
 })();
 </script>
 
 <style is:global>
-.setup-page { padding:2rem 1rem 4rem; max-width:1100px; }
-.hat-header { display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; }
-.hat-icon { font-size:3rem; line-height:1; }
-.action-bar { display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1.5rem; }
-.hat-area { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); min-height:140px; padding:1rem; margin-bottom:1.5rem; }
-.hat-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.5rem; min-height:110px; color:var(--text-muted); font-size:0.9rem; }
-.hat-tokens { display:flex; flex-wrap:wrap; gap:0.75rem; padding:0.25rem; }
-.hat-item { position:relative; }
-.hat-remove-btn { position:absolute; top:-4px; right:-4px; width:18px; height:18px; border-radius:50%; background:var(--red); color:#fff; font-size:0.6rem; line-height:1; display:none; align-items:center; justify-content:center; border:none; cursor:pointer; z-index:5; }
-.hat-item:hover .hat-remove-btn { display:flex; }
-.hat-token { width:64px; height:64px; border-radius:50%; border:2px solid var(--team-color,var(--border-accent)); background:var(--team-bg,rgba(196,136,42,.1)); overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center; }
-.hat-token img { width:100%; height:100%; object-fit:cover; }
-.custom-initial { font-size:1.4rem; font-weight:bold; color:var(--text-muted); }
-.hat-token-label { position:absolute; bottom:calc(100% + 4px); left:50%; transform:translateX(-50%); font-size:0.62rem; color:var(--text-muted); white-space:nowrap; background:rgba(10,5,5,.9); padding:2px 5px; border-radius:3px; pointer-events:none; opacity:0; transition:opacity .15s; }
-.hat-item:hover .hat-token-label { opacity:1; }
-.randomize-section { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:1rem 1.25rem; margin-bottom:1.5rem; }
-.player-count-row { display:flex; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.75rem; }
-.count-label { color:var(--text-muted); font-size:0.85rem; margin-right:0.25rem; }
-.count-btn { width:38px; height:38px; border-radius:50%; border:1px solid var(--border); background:var(--bg); color:var(--text-muted); font-size:0.85rem; font-weight:600; cursor:pointer; transition:all .15s; }
-.count-btn:hover { border-color:var(--border-accent); color:var(--text); }
-.count-btn.active { background:var(--accent); border-color:var(--accent); color:#0a0505; }
-.comp-bar { display:flex; flex-wrap:wrap; gap:0.4rem; align-items:center; margin-bottom:1rem; font-size:0.8rem; }
-.comp-lbl { color:var(--text-dim); margin-right:0.25rem; }
-.comp-chip { padding:.15rem .5rem; border-radius:99px; font-size:.75rem; border:1px solid var(--border); color:var(--text-muted); background:var(--bg); }
-.townsfolk-chip { border-color:#3a6aaa; color:#3a6aaa; }
-.outsider-chip  { border-color:#3a8a5a; color:#3a8a5a; }
-.minion-chip    { border-color:#aa3a5a; color:#aa3a5a; }
-.demon-chip     { border-color:#8a2020; color:#c04040; }
-.randomize-row { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
-.randomize-info { font-size:0.85rem; color:var(--text-muted); }
-.farol-section { background:rgba(139,26,26,.08); border:1px solid var(--red); border-radius:var(--radius); padding:1rem 1.25rem; margin-bottom:1.5rem; }
-.farol-tokens { display:flex; flex-wrap:wrap; gap:1rem; margin-top:0.75rem; }
-.edition-filter { display:flex; gap:0.4rem; flex-wrap:wrap; }
-.ed-btn { padding:.3rem .7rem; border-radius:99px; font-size:.8rem; background:var(--bg); border:1px solid var(--border); color:var(--text-muted); cursor:pointer; transition:all .15s; }
-.ed-btn:hover { border-color:var(--border-accent); color:var(--text); }
-.ed-btn.active { background:rgba(196,136,42,.15); border-color:var(--accent); color:var(--accent); }
-.selector-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(76px,1fr)); gap:0.5rem; max-height:400px; overflow-y:auto; }
-.sel-char { display:flex; flex-direction:column; align-items:center; gap:0.3rem; padding:.5rem .25rem; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; font-size:.65rem; color:var(--text-muted); transition:all .15s; position:relative; }
-.sel-char:hover { border-color:var(--accent); color:var(--text); }
-.sel-char.in-hat { background:rgba(196,136,42,.08); border-color:var(--accent); }
-.sel-img { width:46px; height:46px; border-radius:50%; border:1.5px solid var(--team-color,var(--border-accent)); background:var(--team-bg); overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:.75rem; color:var(--text-muted); }
-.sel-img img { width:100%; height:100%; object-fit:cover; }
-.sel-overlay { position:absolute; top:2px; right:4px; font-size:.7rem; color:var(--accent); font-weight:bold; }
-.form-group { margin-bottom:0.85rem; }
-.form-label { display:block; font-size:.8rem; color:var(--text-muted); margin-bottom:.3rem; }
-.form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
-.form-error { color:var(--red-light); font-size:.8rem; margin-top:.25rem; }
-.radio-group { display:flex; gap:1rem; margin-top:.25rem; }
-.radio-label { display:flex; align-items:center; gap:.4rem; font-size:.85rem; color:var(--text-muted); cursor:pointer; }
-.sheet-char-list { display:flex; flex-direction:column; gap:.6rem; margin-top:.6rem; }
-.sheet-char { display:flex; align-items:center; gap:.75rem; }
-.sheet-token { width:40px; height:40px; border-radius:50%; border:1.5px solid var(--team-color,var(--border-accent)); background:var(--team-bg); overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:.9rem; color:var(--text-muted); }
-.sheet-token img { width:100%; height:100%; object-fit:cover; }
-.team-title { display:flex; align-items:center; gap:.5rem; margin-bottom:.5rem; }
-@media(max-width:640px){.form-row{grid-template-columns:1fr}.action-bar{gap:.4rem}}
+.setup-page { padding: 0 1rem 4rem; max-width: 900px; }
+
+/* ── Step cards ─────────────────────────────────────────────────── */
+.step-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+  transition: opacity .2s, filter .2s;
+}
+
+.step-locked {
+  opacity: .45;
+  pointer-events: none;
+  filter: grayscale(.15);
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+
+.step-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #0a0505;
+  font-size: .78rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.step-title {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.step-desc {
+  font-size: .78rem;
+  color: var(--text-dim);
+  margin-top: .15rem;
+}
+
+.step-info {
+  font-size: .85rem;
+  color: var(--text-muted);
+  margin-top: .75rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+/* ── Player count ───────────────────────────────────────────────── */
+.player-count-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+  margin-bottom: .75rem;
+}
+
+.count-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.count-btn:hover { border-color: var(--border-accent); color: var(--text); }
+.count-btn.active { background: var(--accent); border-color: var(--accent); color: #0a0505; }
+
+.comp-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  align-items: center;
+  padding-top: .5rem;
+  border-top: 1px solid var(--border);
+  margin-top: .5rem;
+}
+.comp-lbl { font-size: .78rem; color: var(--text-dim); margin-right: .1rem; }
+.comp-chip { padding: .15rem .5rem; border-radius: 99px; font-size: .73rem; border: 1px solid; }
+.townsfolk-chip { border-color: #6a9be8; color: #6a9be8; }
+.outsider-chip  { border-color: #4ab878; color: #4ab878; }
+.minion-chip    { border-color: #e05888; color: #e05888; }
+.demon-chip     { border-color: #e04848; color: #e04848; }
+
+/* ── Collection toggles ─────────────────────────────────────────── */
+.collection-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.col-btn {
+  padding: .4rem .9rem;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: .85rem;
+  cursor: pointer;
+  transition: all .15s;
+}
+.col-btn:hover { border-color: var(--border-accent); color: var(--text); }
+.col-btn.active {
+  background: rgba(196,136,42,.15);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── Mode buttons ───────────────────────────────────────────────── */
+.mode-buttons {
+  display: flex;
+  gap: .75rem;
+  flex-wrap: wrap;
+}
+
+/* ── Hat section ────────────────────────────────────────────────── */
+.hat-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.hat-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 99px;
+  background: var(--accent);
+  color: #0a0505;
+  font-size: .7rem;
+  font-weight: 700;
+}
+
+.hat-area {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  min-height: 100px;
+  padding: .75rem;
+  margin-bottom: 1rem;
+}
+
+.hat-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  min-height: 80px;
+  color: var(--text-muted);
+  font-size: .85rem;
+}
+
+.hat-tokens { display: flex; flex-wrap: wrap; gap: .6rem; }
+
+.hat-item { position: relative; display: flex; flex-direction: column; align-items: center; gap: .25rem; }
+
+.hat-token {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid var(--team-color, var(--border-accent));
+  background: var(--team-bg, rgba(196,136,42,.1));
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hat-token img { width: 100%; height: 100%; object-fit: cover; }
+.custom-initial { font-size: 1.3rem; font-weight: bold; color: var(--text-muted); }
+
+.hat-token-label {
+  font-size: .6rem;
+  color: var(--text-dim);
+  text-align: center;
+  max-width: 64px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hat-remove-btn {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+  font-size: .55rem;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  z-index: 5;
+}
+.hat-item:hover .hat-remove-btn { display: flex; }
+
+.manual-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* ── Farols ─────────────────────────────────────────────────────── */
+.farol-section {
+  background: rgba(139,26,26,.08);
+  border: 1px solid var(--red);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+}
+.farol-title { font-family: var(--font-serif); font-size: 1rem; color: var(--accent); margin-bottom: .25rem; }
+.farol-desc  { font-size: .82rem; color: var(--text-muted); margin-bottom: .75rem; }
+.farol-tokens { display: flex; flex-wrap: wrap; gap: 1rem; }
+
+/* ── Character picker grid ──────────────────────────────────────── */
+.selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: .5rem;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.sel-char {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .3rem;
+  padding: .5rem .25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: .65rem;
+  color: var(--text-muted);
+  transition: all .15s;
+  position: relative;
+}
+.sel-char:hover { border-color: var(--accent); color: var(--text); }
+.sel-char.in-hat { background: rgba(196,136,42,.08); border-color: var(--accent); }
+
+.sel-img {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1.5px solid var(--team-color, var(--border-accent));
+  background: var(--team-bg);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .75rem;
+  color: var(--text-muted);
+}
+.sel-img img { width: 100%; height: 100%; object-fit: cover; }
+.sel-overlay { position: absolute; top: 2px; right: 4px; font-size: .7rem; color: var(--accent); font-weight: bold; }
+
+/* ── Sheet ──────────────────────────────────────────────────────── */
+.sheet-char-list { display: flex; flex-direction: column; gap: .6rem; margin-top: .6rem; }
+.sheet-char { display: flex; align-items: center; gap: .75rem; }
+.sheet-token {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 1.5px solid var(--team-color, var(--border-accent));
+  background: var(--team-bg);
+  overflow: hidden; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .9rem; color: var(--text-muted);
+}
+.sheet-token img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ── Misc ───────────────────────────────────────────────────────── */
+.btn-sm { padding: .25rem .5rem; font-size: .75rem; }
+
+@media (max-width: 640px) {
+  .mode-buttons { flex-direction: column; }
+  .mode-buttons .btn { width: 100%; }
+  .hat-section-header { flex-direction: column; align-items: flex-start; gap: .6rem; }
+}
 </style>
