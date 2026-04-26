@@ -52,15 +52,15 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   const CDN      = 'https://www.pocketgrimoire.co.uk';
   const WIKI_BASE = 'https://wiki.bloodontheclocktower.com/';
   const OFFICIAL_EDITIONS = ['tb', 'bmr', 'snv'];
-  const CHINESE_EDITIONS  = ['syyl', 'hdcs'];
+  const HIDDEN_EDITIONS   = ['syyl', 'hdcs'];  // fan-made Chinese scripts, not shown
 
   const EDITION_LABELS = {
-    tb:     'Trouble Brewing',
-    bmr:    'Bad Moon Rising',
-    snv:    'Sects & Violets',
-    '':     'Experimental',
-    syyl:   '中文 (SYYL)',
-    hdcs:   '中文 (HDCS)',
+    tb:     '🍺 Trouble Brewing',
+    bmr:    '🌙 Bad Moon Rising',
+    snv:    '🌹 Sects & Violets',
+    '':     '📖 Experimental',
+    syyl:   '🀄 中文 (SYYL)',
+    hdcs:   '🀄 中文 (HDCS)',
     custom: '🐉 Paisings',
   };
   const TEAM_LABELS = {
@@ -107,6 +107,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 
   function filtered() {
     return ALL_CHARS.filter(c => {
+      if (HIDDEN_EDITIONS.includes(c.edition)) return false;
       if (filterEd !== 'all' && editionGroup(c.edition) !== filterEd) return false;
       if (filterTeam !== 'all' && c.team !== filterTeam) return false;
       if (filterQ) {
@@ -144,7 +145,6 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
       const hasFirst   = c.firstNight > 0;
       const hasOther   = c.otherNight > 0;
       const isOfficial = OFFICIAL_EDITIONS.includes(c.edition);
-      const isChinese  = CHINESE_EDITIONS.includes(c.edition);
       const isPaisings = c.edition === 'custom';
       const nameCa     = getNameCa(c.id, c.name);
       const nameEn     = c.name;
@@ -176,7 +176,6 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
                 <span class="badge team-${c.team}">${teamLabel}</span>
                 <span class="lib-ed-badge">${edLabel}</span>
                 ${isPaisings ? `<span class="lib-paisings-badge">🐉 Paisings</span>` : ''}
-                ${isChinese  ? `<span class="lib-chinese-badge">中文</span>` : ''}
               </div>
             </div>
           </div>
@@ -385,12 +384,20 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 .lib-badges { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
 .lib-ed-badge {
   font-size: 0.68rem;
-  color: var(--text-dim);
+  color: var(--text-muted);
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-accent);
   border-radius: 99px;
   padding: 0.1rem 0.4rem;
 }
+
+/* Brighter team badge colors for dark background readability */
+.lib-card.team-townsfolk .badge { color: #6a9be8; border-color: #6a9be8; background: rgba(58,106,170,.18); }
+.lib-card.team-outsider  .badge { color: #4ab878; border-color: #4ab878; background: rgba(58,138,90,.18); }
+.lib-card.team-minion    .badge { color: #e05888; border-color: #e05888; background: rgba(170,58,90,.18); }
+.lib-card.team-demon     .badge { color: #e04848; border-color: #e04848; background: rgba(180,40,40,.2); }
+.lib-card.team-traveller .badge { color: #d4a030; border-color: #d4a030; background: rgba(138,106,32,.18); }
+.lib-card.team-fabled    .badge { color: #a870e8; border-color: #a870e8; background: rgba(106,58,170,.18); }
 
 .lib-name-row {
   display: flex;
