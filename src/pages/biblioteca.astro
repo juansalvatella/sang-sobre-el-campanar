@@ -1,0 +1,334 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Biblioteca" activePage="biblioteca">
+  <div class="biblioteca-page container">
+
+    <div class="page-header">
+      <h1 class="page-title">📚 Biblioteca</h1>
+      <p class="page-subtitle">Tots els personatges de Blood on the Clocktower</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-bar">
+      <div class="filter-group">
+        <span class="filter-label">Edició:</span>
+        <button class="filter-btn active" data-ed="all">Tots</button>
+        <button class="filter-btn" data-ed="tb">🍺 Cerveseria</button>
+        <button class="filter-btn" data-ed="bmr">🌙 Lluna</button>
+        <button class="filter-btn" data-ed="snv">🌹 Sectes</button>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Equip:</span>
+        <button class="filter-btn active" data-team="all">Tots</button>
+        <button class="filter-btn team-townsfolk" data-team="townsfolk">Vilatans</button>
+        <button class="filter-btn team-outsider"  data-team="outsider">Forasters</button>
+        <button class="filter-btn team-minion"    data-team="minion">Esbirros</button>
+        <button class="filter-btn team-demon"     data-team="demon">Dimonis</button>
+        <button class="filter-btn team-traveller" data-team="traveller">Viatgers</button>
+        <button class="filter-btn team-fabled"    data-team="fabled">Llegendes</button>
+      </div>
+      <input type="text" id="lib-search" class="input lib-search" placeholder="🔍 Cerca per nom o poder..." />
+    </div>
+
+    <div id="lib-count" class="lib-count"></div>
+    <div id="lib-grid" class="lib-grid"></div>
+
+  </div>
+</Layout>
+
+<script is:inline>
+(async function () {
+  const CDN = 'https://www.pocketgrimoire.co.uk';
+
+  const EDITION_LABELS = { tb: '🍺 Cerveseria', bmr: '🌙 Lluna', snv: '🌹 Sectes', custom: 'Personalitzat' };
+  const TEAM_LABELS    = { townsfolk: 'Vilatà', outsider: 'Foraster', minion: 'Esbirro', demon: 'Dimoni', traveller: 'Viatger', fabled: 'Llegenda', loric: 'Lòric' };
+
+  let ALL_CHARS = [];
+  try {
+    const res = await fetch('/data/characters.json');
+    ALL_CHARS = await res.json();
+  } catch(e) { console.error(e); }
+
+  // Add custom chars from localStorage
+  try {
+    const custom = JSON.parse(localStorage.getItem('botc_custom_chars') || '[]');
+    custom.forEach(c => { if (!ALL_CHARS.find(x => x.id === c.id)) ALL_CHARS.push(c); });
+  } catch(_) {}
+
+  let filterEd   = 'all';
+  let filterTeam = 'all';
+  let filterQ    = '';
+
+  function imgUrl(id) {
+    if (!id || id.startsWith('custom_')) return null;
+    return `${CDN}/build/img/roles/${id}_g.webp`;
+  }
+
+  function filtered() {
+    return ALL_CHARS.filter(c => {
+      if (filterEd   !== 'all' && c.edition !== filterEd)   return false;
+      if (filterTeam !== 'all' && c.team    !== filterTeam) return false;
+      if (filterQ) {
+        const q = filterQ.toLowerCase();
+        if (!c.name.toLowerCase().includes(q) && !(c.ability||'').toLowerCase().includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  function render() {
+    const chars = filtered();
+    const grid  = document.getElementById('lib-grid');
+    const count = document.getElementById('lib-count');
+
+    count.textContent = `${chars.length} personatge${chars.length !== 1 ? 's' : ''}`;
+
+    if (!chars.length) {
+      grid.innerHTML = '<div class="lib-empty"><p>Cap personatge trobat.</p></div>';
+      return;
+    }
+
+    grid.innerHTML = chars.map(c => {
+      const url = imgUrl(c.id);
+      const edLabel   = EDITION_LABELS[c.edition] || c.edition;
+      const teamLabel = TEAM_LABELS[c.team] || c.team;
+      const hasFirst  = c.firstNight > 0;
+      const hasOther  = c.otherNight > 0;
+      return `
+        <div class="lib-card team-${c.team}">
+          <div class="lib-card-header">
+            <div class="lib-token team-${c.team}">
+              ${url
+                ? `<img src="${url}" alt="${c.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" loading="lazy"/><span class="lib-token-fallback" style="display:none">${c.name[0]}</span>`
+                : `<span class="lib-token-fallback">${c.name[0]}</span>`
+              }
+            </div>
+            <div class="lib-card-meta">
+              <h3 class="lib-char-name">${c.name}</h3>
+              <div class="lib-badges">
+                <span class="badge team-${c.team}">${teamLabel}</span>
+                <span class="lib-ed-badge">${edLabel}</span>
+              </div>
+            </div>
+          </div>
+          <p class="lib-ability">${c.ability || '—'}</p>
+          ${hasFirst || hasOther ? `
+            <div class="lib-night-flags">
+              ${hasFirst ? `<span class="night-flag">🌑 Primera nit</span>` : ''}
+              ${hasOther ? `<span class="night-flag">🌕 Altres nits</span>` : ''}
+            </div>
+          ` : ''}
+          ${c.reminders?.length ? `
+            <div class="lib-reminders">
+              ${c.reminders.map(r => `<span class="lib-reminder">${r}</span>`).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Edition filter
+  document.querySelectorAll('[data-ed]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-ed]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filterEd = btn.dataset.ed;
+      render();
+    });
+  });
+
+  // Team filter
+  document.querySelectorAll('[data-team]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-team]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filterTeam = btn.dataset.team;
+      render();
+    });
+  });
+
+  // Search
+  document.getElementById('lib-search').addEventListener('input', e => {
+    filterQ = e.target.value;
+    render();
+  });
+
+  render();
+})();
+</script>
+
+<style is:global>
+.biblioteca-page { padding: 0 1rem 4rem; max-width: 1400px; }
+
+.filters-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 1.25rem;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.filter-label {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-right: 0.25rem;
+  white-space: nowrap;
+}
+
+.filter-btn {
+  padding: 0.25rem 0.65rem;
+  border-radius: 99px;
+  font-size: 0.78rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.filter-btn:hover { border-color: var(--border-accent); color: var(--text); }
+.filter-btn.active { background: rgba(196,136,42,.15); border-color: var(--accent); color: var(--accent); }
+.filter-btn.team-townsfolk.active { background: rgba(58,106,170,.15);  border-color: #3a6aaa; color: #3a6aaa; }
+.filter-btn.team-outsider.active  { background: rgba(58,138,90,.15);   border-color: #3a8a5a; color: #3a8a5a; }
+.filter-btn.team-minion.active    { background: rgba(170,58,90,.15);   border-color: #aa3a5a; color: #aa3a5a; }
+.filter-btn.team-demon.active     { background: rgba(138,32,32,.2);    border-color: #8a2020; color: #c04040; }
+.filter-btn.team-traveller.active { background: rgba(138,106,32,.15);  border-color: #8a6a20; color: #c4982a; }
+.filter-btn.team-fabled.active    { background: rgba(106,58,170,.15);  border-color: #6a3aaa; color: #9a6ada; }
+
+.lib-search { max-width: 340px; }
+
+.lib-count {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  margin-bottom: 0.75rem;
+  padding-left: 0.25rem;
+}
+
+/* Grid */
+.lib-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem;
+}
+
+.lib-empty {
+  grid-column: 1/-1;
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+
+/* Card */
+.lib-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--team-color, var(--border-accent));
+  border-radius: var(--radius);
+  padding: 0.875rem;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.lib-card:hover {
+  border-color: var(--team-color, var(--border-accent));
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+
+.lib-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.lib-token {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid var(--team-color, var(--border-accent));
+  background: var(--team-bg, rgba(196,136,42,.1));
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lib-token img { width: 100%; height: 100%; object-fit: cover; }
+.lib-token-fallback {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: var(--team-color, var(--text-muted));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.lib-card-meta { flex: 1; min-width: 0; }
+.lib-char-name { font-size: 1rem; font-family: var(--font-serif); color: var(--text); margin-bottom: 0.3rem; }
+
+.lib-badges { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+.lib-ed-badge {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 0.1rem 0.4rem;
+}
+
+.lib-ability {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.lib-night-flags {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.night-flag {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+}
+
+.lib-reminders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.lib-reminder {
+  font-size: 0.68rem;
+  padding: 0.15rem 0.4rem;
+  background: rgba(196,136,42,.08);
+  border: 1px solid var(--border-accent);
+  border-radius: 4px;
+  color: var(--text-dim);
+}
+
+@media (max-width: 640px) {
+  .lib-grid { grid-template-columns: 1fr; }
+  .lib-search { max-width: 100%; }
+}
+</style>
