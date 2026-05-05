@@ -11,10 +11,10 @@ export const charNamesCa: Record<string, string> = {
   investigator: 'Investigador',
   chef:         'Cuiner',
   empath:       'Empàtic',
-  fortuneteller:'Endevina',
+  fortuneteller:'Vident',
   undertaker:   'Enterramorts',
   monk:         'Monjo',
-  ravenkeeper:  'Guardacorb',
+  ravenkeeper:  'Cuidador de corbs',
   virgin:       'Verge',
   slayer:       'Matador',
   soldier:      'Soldat',
@@ -25,18 +25,18 @@ export const charNamesCa: Record<string, string> = {
   recluse:      'Reclús',
   saint:        'Sant',
   // Esbirros
-  poisoner:     'Enverinadora',
+  poisoner:     'Enmetzinador',
   spy:          'Espia',
   scarletwoman: 'Dona Escarlata',
   baron:        'Baró',
   // Dimoni
-  imp:          'Dimoniàs',
+  imp:          'Diablet',
   // Viatgers
   bureaucrat:   'Buròcrata',
   thief:        'Lladre',
   gunslinger:   'Pistoler',
   scapegoat:    'Cap de Turc',
-  beggar:       'Mendic',
+  beggar:       'Pidolaire',
 
   // === BAD MOON RISING ===
   // Habitants
@@ -45,12 +45,12 @@ export const charNamesCa: Record<string, string> = {
   chambermaid:    'Minyona',
   exorcist:       'Exorcista',
   innkeeper:      'Hostaler',
-  gambler:        'Jugador',
+  gambler:        'Tahúr',
   gossip:         'Xafardera',
   courtier:       'Cortesà',
   professor:      'Professor',
-  minstrel:       'Menestrel',
-  tealady:        'Senyora del Té',
+  minstrel:       'Joglar',
+  tealady:        'Dama del Te',
   pacifist:       'Pacifista',
   fool:           'Bufó',
   // Forasters
@@ -88,11 +88,11 @@ export const charNamesCa: Record<string, string> = {
   seamstress:   'Costurera',
   philosopher:  'Filòsof',
   artist:       'Artista',
-  juggler:      'Malabari',
+  juggler:      'Malabarista',
   sage:         'Endeví',
   // Forasters
   mutant:       'Mutant',
-  sweetheart:   'Estimada',
+  sweetheart:   'Amant',
   barber:       'Barber',
   klutz:        'Maldestre',
   // Esbirros

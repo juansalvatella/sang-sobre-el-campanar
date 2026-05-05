@@ -1,5 +1,5 @@
 {
-  "name": "grimori-butxaca",
+  "name": "sang-sobre-el-campanar",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,7 +9,7 @@
     "deploy": "npm run build && wrangler pages deploy dist"
   },
   "dependencies": {
-    "astro": "^4.16.0"
+    "astro": "^4.16.19"
   },
   "devDependencies": {
     "wrangler": "^4.85.0"

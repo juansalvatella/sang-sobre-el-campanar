@@ -1,5 +1,9 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { charNamesCa } from '../data/char-names-ca';
+import { charAbilitiesCa } from '../data/char-abilities-ca';
+const charNamesCaJson     = JSON.stringify(charNamesCa);
+const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 ---
 
 <Layout title="Configuració" activePage="configuracio">
@@ -7,25 +11,48 @@ import Layout from '../layouts/Layout.astro';
 
     <div class="page-header">
       <h1 class="page-title">⚙️ Configuració</h1>
-      <p class="page-subtitle">Gestiona els personatges homebrew de Paisings</p>
+      <p class="page-subtitle">Gestiona edicions i personatges personalitzats</p>
     </div>
 
     <div class="config-section">
       <div class="config-section-header">
         <div>
-          <h2 class="config-section-title">🐉 Personatges Paisings</h2>
-          <p class="config-section-desc">Els teus personatges personalitzats apareixeran al selector del Barret Seleccionador.</p>
+          <h2 class="config-section-title">Edicions</h2>
+          <p class="config-section-desc">Paisings és una edició. Pots crear-ne més i omplir-les amb personatges nous o ja existents.</p>
         </div>
-        <button class="btn btn-primary" id="btn-new-char">
+        <button class="btn btn-primary" id="btn-new-edition">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-          Nou Personatge
+          Afegir edició
         </button>
       </div>
 
+      <div class="edition-tabs" id="edition-tabs"></div>
+
+      <div class="edition-toolbar">
+        <div>
+          <h3 id="active-edition-title" class="active-edition-title">Paisings</h3>
+          <p id="active-edition-desc" class="config-section-desc">Personatges d'aquesta edició</p>
+        </div>
+        <div class="edition-actions">
+          <button class="btn btn-danger" id="btn-delete-edition" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 7h12v14H6V7zm2-4h8l1 2h4v2H3V5h4l1-2z"/></svg>
+            Eliminar edició
+          </button>
+          <button class="btn btn-ghost" id="btn-add-existing-char">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Afegir personatge
+          </button>
+          <button class="btn btn-primary" id="btn-new-char">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            Nou personatge
+          </button>
+        </div>
+      </div>
+
       <div id="chars-empty" class="chars-empty" style="display:none">
-        <span style="font-size:2.5rem">🐉</span>
-        <p>Cap personatge Paisings encara.</p>
-        <p style="font-size:.85rem;color:var(--text-dim);margin-top:.25rem">Crea el primer personatge per afegir-lo al teu univers.</p>
+        <span style="font-size:2.5rem">📘</span>
+        <p>Cap personatge en aquesta edició encara.</p>
+        <p style="font-size:.85rem;color:var(--text-dim);margin-top:.25rem">Crea'n un de nou o afegeix-ne un de ja existent.</p>
       </div>
 
       <div id="chars-list" class="chars-list"></div>
@@ -33,11 +60,32 @@ import Layout from '../layouts/Layout.astro';
 
   </div>
 
+  <!-- Create edition modal -->
+  <div id="edition-modal" class="modal-overlay" style="display:none">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <h3>Afegir edició</h3>
+        <button class="modal-close btn" id="close-edition-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Nom de l'edició *</label>
+          <input type="text" id="edition-name" class="input" placeholder="Ex: La Vall del Campanar" />
+        </div>
+        <div id="edition-error" class="form-error" style="display:none"></div>
+        <div style="display:flex;justify-content:flex-end;gap:.75rem;margin-top:1rem">
+          <button class="btn btn-ghost" id="cancel-edition-modal">Cancel·lar</button>
+          <button class="btn btn-primary" id="save-edition-modal">Crear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Create / Edit character modal -->
   <div id="char-modal" class="modal-overlay" style="display:none">
     <div class="modal" style="max-width:480px">
       <div class="modal-header">
-        <h3 id="modal-title">✏️ Nou Personatge Paisings</h3>
+        <h3 id="modal-title">✏️ Nou personatge Paisings</h3>
         <button class="modal-close btn" id="close-modal">✕</button>
       </div>
       <div class="modal-body">
@@ -96,15 +144,78 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
+  <!-- Delete edition confirm modal -->
+  <div id="delete-edition-modal" class="modal-overlay" style="display:none">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <h3>Eliminar edició</h3>
+        <button class="modal-close btn" id="close-delete-edition">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom:.75rem">Segur que vols eliminar l'edició <strong id="delete-edition-name"></strong>?</p>
+        <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:1rem">També s'eliminaran els personatges creats dins aquesta edició i es traurà del Barret seleccionador.</p>
+        <div style="display:flex;justify-content:flex-end;gap:.75rem">
+          <button class="btn btn-ghost" id="cancel-delete-edition">Cancel·lar</button>
+          <button class="btn btn-danger" id="confirm-delete-edition">Eliminar edició</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add existing character modal -->
+  <div id="existing-modal" class="modal-overlay" style="display:none">
+    <div class="modal" style="max-width:760px">
+      <div class="modal-header">
+        <h3>Afegir personatge</h3>
+        <button class="modal-close btn" id="close-existing-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="existing-search" class="input" placeholder="Cerca personatge..." style="margin-bottom:.75rem" />
+        <div class="team-filter-bar" id="existing-team-filter">
+          <button class="team-filter-btn active" data-team="all">Tots</button>
+          <button class="team-filter-btn team-townsfolk" data-team="townsfolk">Vilatans</button>
+          <button class="team-filter-btn team-outsider" data-team="outsider">Forasters</button>
+          <button class="team-filter-btn team-traveller" data-team="traveller">Viatgers</button>
+          <button class="team-filter-btn team-minion" data-team="minion">Esbirros</button>
+          <button class="team-filter-btn team-demon" data-team="demon">Dimonis</button>
+        </div>
+        <div id="existing-grid" class="existing-grid"></div>
+      </div>
+    </div>
+  </div>
+
 </Layout>
 
+<script id="char-names-ca-data"     type="application/json" set:html={charNamesCaJson}></script>
+<script id="char-abilities-ca-data" type="application/json" set:html={charAbilitiesCaJson}></script>
+
 <script is:inline>
-(function () {
+(async function () {
   const CDN = 'https://www.pocketgrimoire.co.uk';
+  const NAMES_CA     = JSON.parse(document.getElementById('char-names-ca-data').textContent);
+  const ABILITIES_CA = JSON.parse(document.getElementById('char-abilities-ca-data').textContent);
   const TEAM_LABELS = {
     townsfolk:'Vilatà', outsider:'Foraster', minion:'Esbirro',
     demon:'Dimoni', traveller:'Viatger', fabled:'Llegenda',
   };
+  const HIDDEN_EDITIONS = ['syyl','hdcs'];
+  let ALL_CHARS = [];
+  let activeEditionId = 'custom';
+  let editingId = null;
+  let deletingId = null;
+  let deletingEditionId = null;
+  let existingTeamFilter = 'all';
+
+  try {
+    const res = await fetch('/data/characters.json');
+    ALL_CHARS = (await res.json()).filter(c => !HIDDEN_EDITIONS.includes(c.edition));
+  } catch(e) { console.error('Error loading characters:', e); }
+
+  function getNameCa(id, n)    { return NAMES_CA[id] ?? n; }
+  function getAbilityCa(id, a) { return ABILITIES_CA[id] ?? a; }
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
 
   function loadChars() {
     try { return JSON.parse(localStorage.getItem('botc_custom_chars') || '[]'); } catch(_) { return []; }
@@ -114,13 +225,46 @@ import Layout from '../layouts/Layout.astro';
     localStorage.setItem('botc_custom_chars', JSON.stringify(chars));
   }
 
+  function loadEditions() {
+    let editions = [];
+    try { editions = JSON.parse(localStorage.getItem('botc_custom_editions') || '[]'); } catch(_) {}
+    if (!editions.find(e => e.id === 'custom')) editions.unshift({ id: 'custom', name: 'Paisings', icon: '🐉' });
+    return editions;
+  }
+
+  function saveEditions(editions) {
+    localStorage.setItem('botc_custom_editions', JSON.stringify(editions));
+  }
+
+  function loadMembers() {
+    try { return JSON.parse(localStorage.getItem('botc_edition_members') || '{}'); } catch(_) { return {}; }
+  }
+
+  function saveMembers(members) {
+    localStorage.setItem('botc_edition_members', JSON.stringify(members));
+  }
+
   function imgUrl(id) {
     if (!id || id.startsWith('custom_')) return null;
     return `${CDN}/build/img/roles/${id}_g.webp`;
   }
 
+  function activeEdition() {
+    return loadEditions().find(e => e.id === activeEditionId) || { id: 'custom', name: 'Paisings', icon: '🐉' };
+  }
+
   function render() {
-    const chars = loadChars();
+    renderEditionTabs();
+    const ed = activeEdition();
+    document.getElementById('active-edition-title').textContent = `${ed.icon || '📘'} ${ed.name}`;
+    document.getElementById('active-edition-desc').textContent = 'Personatges d\'aquesta edició';
+    document.getElementById('btn-delete-edition').style.display = activeEditionId === 'custom' ? 'none' : '';
+
+    const members = loadMembers();
+    const memberIds = new Set(members[activeEditionId] || []);
+    const customChars = loadChars().filter(c => (c.edition || 'custom') === activeEditionId);
+    const existingChars = ALL_CHARS.filter(c => memberIds.has(c.id) && !customChars.find(x => x.id === c.id));
+    const chars = [...customChars, ...existingChars];
     const empty = document.getElementById('chars-empty');
     const list  = document.getElementById('chars-list');
     if (!chars.length) {
@@ -131,23 +275,27 @@ import Layout from '../layouts/Layout.astro';
     empty.style.display = 'none';
     list.innerHTML = chars.map(c => {
       const teamLabel = TEAM_LABELS[c.team] || c.team;
-      const initial = (c.name||'?')[0].toUpperCase();
+      const name = getNameCa(c.id, c.name);
+      const ability = getAbilityCa(c.id, c.ability || '');
+      const initial = (name||'?')[0].toUpperCase();
+      const url = imgUrl(c.id);
+      const isCustom = c.id.startsWith('custom_');
       return `
         <div class="char-row team-${c.team}" data-id="${c.id}">
           <div class="char-token team-${c.team}">
-            <span class="char-initial">${initial}</span>
+            ${url ? `<img src="${url}" alt="${escapeHtml(name)}" onerror="this.style.display='none'" loading="lazy"/>` : `<span class="char-initial">${escapeHtml(initial)}</span>`}
           </div>
           <div class="char-info">
-            <div class="char-name">${c.name}</div>
+            <div class="char-name">${escapeHtml(name)}</div>
             <div class="char-badges">
               <span class="badge team-${c.team}">${teamLabel}</span>
-              <span class="paisings-tag">🐉 Paisings</span>
+              <span class="paisings-tag">${escapeHtml(ed.icon || '📘')} ${escapeHtml(ed.name)}</span>
             </div>
-            <div class="char-ability">${c.ability ? `"${c.ability}"` : '<em style="color:var(--text-dim)">Sense descripció</em>'}</div>
+            <div class="char-ability">${ability ? `"${escapeHtml(ability)}"` : '<em style="color:var(--text-dim)">Sense descripció</em>'}</div>
           </div>
           <div class="char-actions">
-            <button class="btn btn-ghost btn-sm btn-edit" data-id="${c.id}" title="Editar">✏️</button>
-            <button class="btn btn-danger btn-sm btn-delete" data-id="${c.id}" data-name="${c.name}" title="Eliminar">🗑</button>
+            ${isCustom ? `<button class="btn btn-ghost btn-sm btn-edit" data-id="${c.id}" title="Editar">✏️</button>` : ''}
+            <button class="btn btn-danger btn-sm btn-delete" data-id="${c.id}" data-name="${escapeHtml(name)}" title="${isCustom ? 'Eliminar' : "Treure de l'edició"}">🗑</button>
           </div>
         </div>
       `;
@@ -161,12 +309,105 @@ import Layout from '../layouts/Layout.astro';
     });
   }
 
-  // ── Create / Edit modal ──────────────────────────────────────
-  let editingId = null;
+  function renderEditionTabs() {
+    const tabs = document.getElementById('edition-tabs');
+    const editions = loadEditions();
+    tabs.innerHTML = editions.map(ed => `
+      <button class="edition-tab ${ed.id === activeEditionId ? 'active' : ''}" data-id="${ed.id}">
+        <span>${escapeHtml(ed.icon || '📘')}</span>
+        ${escapeHtml(ed.name)}
+      </button>
+    `).join('');
+    tabs.querySelectorAll('.edition-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeEditionId = btn.dataset.id;
+        render();
+      });
+    });
+  }
 
+  function openEditionModal() {
+    document.getElementById('edition-name').value = '';
+    document.getElementById('edition-error').style.display = 'none';
+    document.getElementById('edition-modal').style.display = '';
+    document.getElementById('edition-name').focus();
+  }
+
+  function closeEditionModal() {
+    document.getElementById('edition-modal').style.display = 'none';
+  }
+
+  function openDeleteEdition() {
+    if (activeEditionId === 'custom') return;
+    const ed = activeEdition();
+    deletingEditionId = ed.id;
+    document.getElementById('delete-edition-name').textContent = ed.name;
+    document.getElementById('delete-edition-modal').style.display = '';
+  }
+
+  function closeDeleteEdition() {
+    document.getElementById('delete-edition-modal').style.display = 'none';
+    deletingEditionId = null;
+  }
+
+  function removeEditionFromSavedHat(editionId, removedIds) {
+    try {
+      const state = JSON.parse(localStorage.getItem('botc_hat') || '{}');
+      const shouldRemove = c => removedIds.has(c.id) || c.edition === editionId;
+      if (state.hat) state.hat = state.hat.filter(c => !shouldRemove(c));
+      if (state.liveFarols) state.liveFarols = state.liveFarols.filter(c => !shouldRemove(c));
+      if (state.lastDraw?.assigned) state.lastDraw.assigned = state.lastDraw.assigned.filter(c => !shouldRemove(c));
+      if (state.lastDraw?.farols) state.lastDraw.farols = state.lastDraw.farols.filter(c => !shouldRemove(c));
+      if (state.collections) state.collections = state.collections.filter(id => id !== editionId);
+      localStorage.setItem('botc_hat', JSON.stringify(state));
+    } catch(_) {}
+    try {
+      const setup = JSON.parse(localStorage.getItem('botc_setup') || '{}');
+      if (setup.chars) setup.chars = setup.chars.filter(id => !removedIds.has(id));
+      localStorage.setItem('botc_setup', JSON.stringify(setup));
+    } catch(_) {}
+  }
+
+  function deleteEdition(editionId) {
+    if (!editionId || editionId === 'custom') return;
+    const editions = loadEditions().filter(ed => ed.id !== editionId);
+    saveEditions(editions);
+
+    const members = loadMembers();
+    const memberIds = new Set(members[editionId] || []);
+    delete members[editionId];
+    saveMembers(members);
+
+    const remainingChars = [];
+    const removedIds = new Set(memberIds);
+    loadChars().forEach(c => {
+      if ((c.edition || 'custom') === editionId) removedIds.add(c.id);
+      else remainingChars.push(c);
+    });
+    saveChars(remainingChars);
+    removeEditionFromSavedHat(editionId, removedIds);
+
+    activeEditionId = 'custom';
+    closeDeleteEdition();
+    render();
+  }
+
+  function slugifyEdition(name) {
+    const base = name.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'edicio';
+    const ids = new Set(loadEditions().map(e => e.id));
+    let id = `custom_${base}`;
+    let i = 2;
+    while (ids.has(id)) id = `custom_${base}-${i++}`;
+    return id;
+  }
+
+  // ── Create / Edit modal ──────────────────────────────────────
   function openCreate() {
     editingId = null;
-    document.getElementById('modal-title').textContent = '✏️ Nou Personatge Paisings';
+    document.getElementById('modal-title').textContent = `✏️ Nou personatge - ${activeEdition().name}`;
     document.getElementById('edit-id').value = '';
     document.getElementById('cc-name').value = '';
     document.getElementById('cc-ability').value = '';
@@ -183,7 +424,7 @@ import Layout from '../layouts/Layout.astro';
     const c = chars.find(x => x.id === id);
     if (!c) return;
     editingId = id;
-    document.getElementById('modal-title').textContent = '✏️ Editar Personatge';
+    document.getElementById('modal-title').textContent = '✏️ Editar personatge';
     document.getElementById('edit-id').value = id;
     document.getElementById('cc-name').value = c.name;
     document.getElementById('cc-ability').value = c.ability || '';
@@ -223,7 +464,7 @@ import Layout from '../layouts/Layout.astro';
         ability: document.getElementById('cc-ability').value.trim(),
         team: document.getElementById('cc-team').value,
         alignment: document.querySelector('[name="cc-align"]:checked')?.value || 'good',
-        edition: 'custom', firstNight: 0, firstNightReminder: '', otherNight: 0, otherNightReminder: '', reminders: [], setup: false,
+        edition: activeEditionId, firstNight: 0, firstNightReminder: '', otherNight: 0, otherNightReminder: '', reminders: [], setup: false,
       });
     }
     saveChars(chars);
@@ -231,9 +472,57 @@ import Layout from '../layouts/Layout.astro';
     render();
   });
 
-  // ── Delete modal ─────────────────────────────────────────────
-  let deletingId = null;
+  // ── Existing character modal ─────────────────────────────────
+  function openExistingModal() {
+    document.getElementById('existing-search').value = '';
+    existingTeamFilter = 'all';
+    syncExistingTeamFilter();
+    renderExistingGrid();
+    document.getElementById('existing-modal').style.display = '';
+    document.getElementById('existing-search').focus();
+  }
 
+  function closeExistingModal() { document.getElementById('existing-modal').style.display = 'none'; }
+
+  function renderExistingGrid() {
+    const q = document.getElementById('existing-search').value.trim().toLowerCase();
+    const members = loadMembers();
+    const memberIds = new Set(members[activeEditionId] || []);
+    const customIds = new Set(loadChars().filter(c => (c.edition || 'custom') === activeEditionId).map(c => c.id));
+    let chars = ALL_CHARS.filter(c => !memberIds.has(c.id) && !customIds.has(c.id));
+    if (existingTeamFilter !== 'all') chars = chars.filter(c => c.team === existingTeamFilter);
+    if (q) chars = chars.filter(c => getNameCa(c.id, c.name).toLowerCase().includes(q) || c.name.toLowerCase().includes(q));
+    const grid = document.getElementById('existing-grid');
+    if (!chars.length) {
+      grid.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:2rem">Cap personatge disponible.</p>';
+      return;
+    }
+    grid.innerHTML = chars.map(c => {
+      const name = getNameCa(c.id, c.name);
+      const url = imgUrl(c.id);
+      return `<button class="existing-char team-${c.team}" data-id="${c.id}">
+        <div class="existing-img team-${c.team}">${url ? `<img src="${url}" alt="${escapeHtml(name)}" onerror="this.style.display='none'" loading="lazy"/>` : `<span>${escapeHtml(name[0] || '?')}</span>`}</div>
+        <div class="existing-info">
+          <span class="existing-name">${escapeHtml(name)}</span>
+          <span class="existing-ability">${escapeHtml(getAbilityCa(c.id, c.ability || ''))}</span>
+        </div>
+        <span class="existing-add">+</span>
+      </button>`;
+    }).join('');
+    grid.querySelectorAll('.existing-char').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const members = loadMembers();
+        const ids = new Set(members[activeEditionId] || []);
+        ids.add(btn.dataset.id);
+        members[activeEditionId] = [...ids];
+        saveMembers(members);
+        render();
+        renderExistingGrid();
+      });
+    });
+  }
+
+  // ── Delete modal ─────────────────────────────────────────────
   function openDelete(id, name) {
     deletingId = id;
     document.getElementById('delete-name').textContent = name;
@@ -248,8 +537,14 @@ import Layout from '../layouts/Layout.astro';
 
   document.getElementById('confirm-delete').addEventListener('click', () => {
     if (!deletingId) return;
-    let chars = loadChars().filter(c => c.id !== deletingId);
-    saveChars(chars);
+    if (deletingId.startsWith('custom_')) {
+      let chars = loadChars().filter(c => c.id !== deletingId);
+      saveChars(chars);
+    } else {
+      const members = loadMembers();
+      members[activeEditionId] = (members[activeEditionId] || []).filter(id => id !== deletingId);
+      saveMembers(members);
+    }
     // Remove from hat too
     try {
       const hat = JSON.parse(localStorage.getItem('botc_hat') || '{}');
@@ -257,6 +552,49 @@ import Layout from '../layouts/Layout.astro';
     } catch(_) {}
     closeDelete();
     render();
+  });
+
+  document.getElementById('btn-new-edition').addEventListener('click', openEditionModal);
+  document.getElementById('btn-delete-edition').addEventListener('click', openDeleteEdition);
+  document.getElementById('close-edition-modal').addEventListener('click', closeEditionModal);
+  document.getElementById('cancel-edition-modal').addEventListener('click', closeEditionModal);
+  document.getElementById('edition-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeEditionModal(); });
+  document.getElementById('save-edition-modal').addEventListener('click', () => {
+    const name = document.getElementById('edition-name').value.trim();
+    if (!name) {
+      document.getElementById('edition-error').textContent = 'El nom és obligatori.';
+      document.getElementById('edition-error').style.display = '';
+      return;
+    }
+    const editions = loadEditions();
+    const edition = { id: slugifyEdition(name), name, icon: '📘' };
+    editions.push(edition);
+    saveEditions(editions);
+    activeEditionId = edition.id;
+    closeEditionModal();
+    render();
+  });
+
+  document.getElementById('close-delete-edition').addEventListener('click', closeDeleteEdition);
+  document.getElementById('cancel-delete-edition').addEventListener('click', closeDeleteEdition);
+  document.getElementById('delete-edition-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDeleteEdition(); });
+  document.getElementById('confirm-delete-edition').addEventListener('click', () => deleteEdition(deletingEditionId));
+
+  document.getElementById('btn-add-existing-char').addEventListener('click', openExistingModal);
+  document.getElementById('close-existing-modal').addEventListener('click', closeExistingModal);
+  document.getElementById('existing-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeExistingModal(); });
+  document.getElementById('existing-search').addEventListener('input', renderExistingGrid);
+  function syncExistingTeamFilter() {
+    document.querySelectorAll('#existing-team-filter .team-filter-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.team === existingTeamFilter);
+    });
+  }
+  document.querySelectorAll('#existing-team-filter .team-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      existingTeamFilter = btn.dataset.team;
+      syncExistingTeamFilter();
+      renderExistingGrid();
+    });
   });
 
   render();
@@ -295,6 +633,56 @@ import Layout from '../layouts/Layout.astro';
   color: var(--text-dim);
 }
 
+.edition-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  padding: 1rem 1.5rem .75rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10,5,5,.25);
+}
+
+.edition-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .4rem .8rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  background: var(--bg);
+  transition: all .15s;
+}
+.edition-tab:hover { border-color: var(--border-accent); color: var(--text); }
+.edition-tab.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(196,136,42,.12);
+  font-weight: 600;
+}
+
+.edition-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.active-edition-title {
+  font-size: 1rem;
+  color: var(--text);
+  margin-bottom: .15rem;
+}
+
+.edition-actions {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+
 .chars-empty {
   display: flex;
   flex-direction: column;
@@ -329,7 +717,9 @@ import Layout from '../layouts/Layout.astro';
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
 }
+.char-token img { width: 100%; height: 100%; object-fit: cover; }
 
 .char-initial {
   font-size: 1.2rem;
@@ -399,8 +789,86 @@ import Layout from '../layouts/Layout.astro';
 .radio-group { display: flex; gap: 1rem; margin-top: .25rem; }
 .radio-label { display: flex; align-items: center; gap: .4rem; font-size: .85rem; color: var(--text-muted); cursor: pointer; }
 
+.team-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  margin: 0 0 .75rem;
+}
+.team-filter-btn {
+  padding: .22rem .55rem;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: .72rem;
+  cursor: pointer;
+  transition: all .15s;
+}
+.team-filter-btn:hover,
+.team-filter-btn.active {
+  border-color: var(--team-color, var(--accent));
+  color: var(--team-color, var(--accent));
+  background: var(--team-bg, rgba(196,136,42,.12));
+}
+
+.existing-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: .4rem;
+  max-height: 430px;
+  overflow-y: auto;
+}
+
+.existing-char {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  width: 100%;
+  padding: .55rem .75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  text-align: left;
+  transition: all .15s;
+}
+.existing-char:hover {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
+
+.existing-img {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--team-color, var(--border-accent));
+  background: var(--team-bg, rgba(196,136,42,.1));
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.existing-img img { width: 100%; height: 100%; object-fit: cover; }
+.existing-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .15rem; }
+.existing-name { color: var(--text); font-size: .9rem; font-weight: 600; }
+.existing-ability {
+  color: var(--text-dim);
+  font-size: .75rem;
+  font-style: italic;
+  line-height: 1.35;
+}
+.existing-add {
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
 @media (max-width: 640px) {
   .config-section-header { flex-direction: column; }
+  .edition-toolbar { flex-direction: column; align-items: stretch; }
   .form-row { grid-template-columns: 1fr; }
 }
 </style>

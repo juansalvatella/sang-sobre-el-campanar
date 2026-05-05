@@ -10,7 +10,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Personatges de la Partida — Grimori de Butxaca</title>
+  <title>Personatges de la partida — Sang sobre el Campanar</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://www.pocketgrimoire.co.uk" />
   <style>
@@ -82,7 +82,27 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     .team-fabled    .char-token { border-color: #a870e8; background: rgba(106,58,170,.15); color: #a870e8; }
     .char-token img { width: 100%; height: 100%; object-fit: cover; }
     .char-info { flex: 1; min-width: 0; }
-    .char-name { font-size: .9rem; font-weight: 600; color: #e0d4b0; margin-bottom: .18rem; }
+    .char-name {
+      font-size: .9rem;
+      font-weight: 600;
+      color: #e0d4b0;
+      margin-bottom: .18rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: .25rem;
+    }
+    .char-name[href] { color: #e8c16a; }
+    .char-name[href]::after {
+      content: "↗";
+      font-size: .68rem;
+      color: #8b6a32;
+    }
+    .char-name[href]:hover {
+      color: #ffd989;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
     .char-ability { font-size: .75rem; color: #7a6a50; font-style: italic; line-height: 1.4; }
     .empty {
       text-align: center; padding: 3rem 1rem;
@@ -105,7 +125,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 
 <div id="content"></div>
 
-<div class="footer">Grimori de Butxaca — Blood on the Clocktower</div>
+<div class="footer">Sang sobre el Campanar — Blood on the Clocktower</div>
 
 <script id="char-names-ca-data"     type="application/json" set:html={charNamesCaJson}></script>
 <script id="char-abilities-ca-data" type="application/json" set:html={charAbilitiesCaJson}></script>
@@ -113,10 +133,17 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 <script is:inline>
 (async function () {
   const CDN        = 'https://www.pocketgrimoire.co.uk';
+  const WIKI_BASE  = 'https://wiki.bloodontheclocktower.com/';
   const NAMES_CA   = JSON.parse(document.getElementById('char-names-ca-data').textContent);
   const ABILITIES_CA = JSON.parse(document.getElementById('char-abilities-ca-data').textContent);
   function getNameCa(id, n)    { return NAMES_CA[id]     ?? n; }
   function getAbilityCa(id, a) { return ABILITIES_CA[id] ?? a; }
+  function escapeHtml(value = '') {
+    return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
+  function wikiUrl(nameEn) {
+    return WIKI_BASE + encodeURIComponent(nameEn.replace(/\s+/g, '_')).replace(/%27/g, "'");
+  }
 
   const TEAM_LABELS = {
     townsfolk:'Vilatans', outsider:'Forasters', minion:'Esbirros',
@@ -155,13 +182,16 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
         const url  = `${CDN}/build/img/roles/${c.id}_g.webp`;
         const name = getNameCa(c.id, c.name);
         const ab   = getAbilityCa(c.id, c.ability||'');
+        const nameHtml = c.id?.startsWith('custom_')
+          ? `<span class="char-name">${escapeHtml(name)}</span>`
+          : `<a class="char-name" href="${wikiUrl(c.name)}" target="_blank" rel="noopener">${escapeHtml(name)}</a>`;
         return `<div class="char-row">
           <div class="char-token">
-            <img src="${url}" alt="${name}" onerror="this.parentNode.textContent='${name[0]}'" loading="lazy"/>
+            <img src="${url}" alt="${escapeHtml(name)}" onerror="this.parentNode.textContent='${escapeHtml(name[0] || '?')}'" loading="lazy"/>
           </div>
           <div class="char-info">
-            <div class="char-name">${name}</div>
-            ${ab ? `<div class="char-ability">${ab}</div>` : ''}
+            ${nameHtml}
+            ${ab ? `<div class="char-ability">${escapeHtml(ab)}</div>` : ''}
           </div>
         </div>`;
       }).join('')}</div>

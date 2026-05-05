@@ -6,11 +6,11 @@ const charNamesCaJson     = JSON.stringify(charNamesCa);
 const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 ---
 
-<Layout title="Barret Seleccionador" activePage="partida">
+<Layout title="Barret seleccionador" activePage="partida">
   <div class="setup-page container">
 
     <div class="page-header">
-      <h1 class="page-title">🎩 Barret Seleccionador</h1>
+      <h1 class="page-title">🎩 Barret seleccionador</h1>
       <p class="page-subtitle">Prepara la teva partida de Blood on the Clocktower</p>
     </div>
 
@@ -38,11 +38,12 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
         </div>
       </div>
       <div class="collection-toggles">
-        <button class="col-btn" data-col="tb">🍺 Trouble Brewing</button>
-        <button class="col-btn" data-col="bmr">🌙 Bad Moon Rising</button>
-        <button class="col-btn" data-col="snv">🌹 Sects &amp; Violets</button>
-        <button class="col-btn" data-col="">📖 Experimental</button>
+        <button class="col-btn" data-col="tb">🍺 Problemes a la cerveseria</button>
+        <button class="col-btn" data-col="bmr">🌙 Lluna malèfica</button>
+        <button class="col-btn" data-col="snv">🌹 Sectes i violetes</button>
+        <button class="col-btn" data-col="">📖 Experimentals</button>
         <button class="col-btn" data-col="custom">🐉 Paisings</button>
+        <span id="custom-edition-toggles" class="collection-toggles-inline"></span>
       </div>
     </div>
 
@@ -51,14 +52,15 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
       <div class="step-header">
         <span class="step-badge">3</span>
         <div style="flex:1">
-          <div class="step-title">Barret Seleccionador</div>
+          <div class="step-title">Barret seleccionador</div>
         </div>
         <span id="hat-count-badge" class="hat-count-badge"></span>
       </div>
 
       <div class="mode-bar">
         <button class="btn btn-primary" id="btn-randomize">🎲 Randomitzar</button>
-        <button class="btn btn-ghost" id="btn-manual">✋ Triar Manualment</button>
+        <button class="btn btn-primary" id="btn-autocomplete" style="display:none">Autocompletar</button>
+        <button class="btn btn-ghost" id="btn-manual">✋ Triar manualment</button>
         <span class="mode-bar-spacer"></span>
         <button class="btn btn-ghost btn-sm" id="btn-add-char">+ Afegir</button>
         <button class="btn btn-ghost btn-sm" id="btn-sheet" style="display:none">📄 Full</button>
@@ -74,11 +76,13 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
         <div id="hat-tokens" class="hat-tokens" style="display:none"></div>
       </div>
 
+      <div id="coherence-panel" class="coherence-panel" style="display:none"></div>
+
       <!-- Farols (appear inline when hat is complete) -->
       <div id="farol-subsection" class="farol-subsection" style="display:none">
         <div class="farol-subheader">
           <div>
-            <span class="farol-sub-title">🎭 Dimonis de Farol</span>
+            <span class="farol-sub-title">🎭 Dimonis de farol</span>
             <span class="farol-sub-desc"> — personatges que el Dimoni pot usar com a coartada</span>
           </div>
           <button class="btn btn-ghost btn-sm" id="btn-randomize-farols">🎲 Randomitzar</button>
@@ -88,7 +92,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 
       <!-- Start -->
       <div id="start-row" class="start-row">
-        <button class="btn btn-primary btn-lg" id="btn-start" disabled>Iniciar Partida →</button>
+        <button class="btn btn-primary btn-lg" id="btn-start" disabled>Iniciar partida →</button>
         <div id="start-info" class="step-info"></div>
       </div>
     </div>
@@ -99,13 +103,21 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   <div id="char-selector-modal" class="modal-overlay" style="display:none">
     <div class="modal" style="max-width:760px">
       <div class="modal-header">
-        <h3>Selecciona Personatges</h3>
+        <h3>Selecciona personatges</h3>
         <button class="modal-close btn" id="close-selector">✕</button>
       </div>
       <div class="modal-body">
         <div class="selector-toolbar">
           <input type="text" class="input" id="selector-search" placeholder="Cerca per nom..." style="flex:1" />
           <button class="btn btn-ghost btn-sm" id="btn-toggle-desc">📖 Descripcions</button>
+        </div>
+        <div class="team-filter-bar" data-filter-scope="selector">
+          <button class="team-filter-btn active" data-team="all">Tots</button>
+          <button class="team-filter-btn team-townsfolk" data-team="townsfolk">Vilatans</button>
+          <button class="team-filter-btn team-outsider" data-team="outsider">Forasters</button>
+          <button class="team-filter-btn team-traveller" data-team="traveller">Viatgers</button>
+          <button class="team-filter-btn team-minion" data-team="minion">Esbirros</button>
+          <button class="team-filter-btn team-demon" data-team="demon">Dimonis</button>
         </div>
         <div id="selector-comp" class="selector-comp" style="display:none"></div>
         <div id="selector-grid" class="selector-grid"></div>
@@ -117,11 +129,19 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   <div id="farol-picker-modal" class="modal-overlay" style="display:none">
     <div class="modal" style="max-width:680px">
       <div class="modal-header">
-        <h3>Canviar Farol</h3>
+        <h3>Canviar farol</h3>
         <button class="modal-close btn" id="close-farol-picker">✕</button>
       </div>
       <div class="modal-body">
         <input type="text" class="input" id="farol-search" placeholder="Cerca per nom..." style="margin-bottom:.75rem" />
+        <div class="team-filter-bar" data-filter-scope="farol">
+          <button class="team-filter-btn active" data-team="all">Tots</button>
+          <button class="team-filter-btn team-townsfolk" data-team="townsfolk">Vilatans</button>
+          <button class="team-filter-btn team-outsider" data-team="outsider">Forasters</button>
+          <button class="team-filter-btn team-traveller" data-team="traveller">Viatgers</button>
+          <button class="team-filter-btn team-minion" data-team="minion">Esbirros</button>
+          <button class="team-filter-btn team-demon" data-team="demon">Dimonis</button>
+        </div>
         <div id="farol-picker-grid" class="selector-grid show-abilities"></div>
       </div>
     </div>
@@ -131,7 +151,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   <div id="sheet-modal" class="modal-overlay" style="display:none">
     <div class="modal" style="max-width:680px">
       <div class="modal-header">
-        <h3>📄 Full de Personatge</h3>
+        <h3>📄 Full de personatge</h3>
         <button class="modal-close btn" id="close-sheet">✕</button>
       </div>
       <div class="modal-body" id="sheet-content"></div>
@@ -150,6 +170,17 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   const ABILITIES_CA = JSON.parse(document.getElementById('char-abilities-ca-data').textContent);
   function getNameCa(id, n)    { return NAMES_CA[id]     ?? n; }
   function getAbilityCa(id, a) { return ABILITIES_CA[id] ?? a; }
+  function escapeHtml(value = '') {
+    return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
+  function shortPower(c) {
+    const text = getAbilityCa(c.id, c.ability || '').trim();
+    return text.length > 190 ? `${text.slice(0, 187).trim()}...` : text;
+  }
+  function powerTooltipAttr(c) {
+    const power = shortPower(c);
+    return power ? ` data-power="${escapeHtml(power)}"` : '';
+  }
 
   const TEAM_COMP = {
     5: {townsfolk:3,outsider:0,minion:1,demon:1},
@@ -174,13 +205,43 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   const TEAM_LABELS = {townsfolk:'Vilatà',outsider:'Foraster',minion:'Esbirro',demon:'Dimoni',traveller:'Viatger',fabled:'Llegenda'};
   const COMP_LABELS = {townsfolk:'Vilatans',outsider:'Forasters',minion:'Esbirros',demon:'Dimoni',traveller:'Viatgers'};
   const HIDDEN_EDITIONS = ['syyl','hdcs'];
+  const FORCED_PAIRS = [
+    { id: 'choirboy', requires: 'king', label: 'El Nen del Cor necessita el Rei.' },
+    { id: 'huntsman', requires: 'damsel', label: 'El Caçador necessita la Donzella.' },
+  ];
+  const SETUP_COMP_RULES = {
+    baron:        { townsfolk: -2, outsider:  2, note: 'El Baró afegeix 2 Forasters i retira 2 Vilatans.' },
+    fanggu:       { townsfolk: -1, outsider:  1, note: 'El Fang Gu afegeix 1 Foraster i retira 1 Vilatà.' },
+    vigormortis:  { townsfolk:  1, outsider: -1, note: 'El Vigormortis retira 1 Foraster i afegeix 1 Vilatà.' },
+    lilmonsta:    { townsfolk: -1, minion:    1, note: 'El Petit Monstre afegeix 1 Esbirro i retira 1 Vilatà.' },
+    lordoftyphon: { townsfolk: -1, minion:    1, note: 'El Senyor de Typhon afegeix 1 Esbirro. Ajusta els Forasters segons criteri del narrador.' },
+    summoner:     { townsfolk:  1, demon:    -1, note: 'L’Invocador comença sense Dimoni; el token de Dimoni entra més tard.' },
+  };
+  const FLEXIBLE_SETUP_NOTES = {
+    godfather: 'El Padrí canvia el nombre de Forasters en -1 o +1, a criteri del narrador.',
+    balloonist: 'El Globusaire pot afegir 0 o 1 Foraster, a criteri del narrador.',
+    sentinel: 'La Sentinella pot afegir o retirar 1 Foraster.',
+    kazali: 'El Kazali permet ajustar els Forasters i tria quins jugadors són Esbirros.',
+    xaan: 'El Xaan fa que X sigui el nombre de Forasters.',
+    hermit: 'L’Ermità pot retirar 0 o 1 Foraster.',
+    legion: 'La Legió necessita una configuració especial: la majoria de jugadors són Legió.',
+    riot: 'La Revolta necessita una configuració especial: els Esbirros esdevenen Revolta el tercer dia.',
+    atheist: 'L’Ateu transforma les places malvades en places bones: no hi ha Dimoni ni Esbirros inicials.',
+    marionette: 'La Marioneta ha de ser veïna del Dimoni.',
+    villageidiot: 'L’Idiota del Poble pot afegir duplicats i un d’ells va borratxo.',
+  };
 
   // ── Load characters ──────────────────────────────────────────────
   let ALL_CHARS = [];
+  let JINXES = [];
   try {
     const res = await fetch('/data/characters.json');
     ALL_CHARS = (await res.json()).filter(c => !HIDDEN_EDITIONS.includes(c.edition));
   } catch(e) { console.error('Error loading characters:', e); }
+  try {
+    const res = await fetch('/data/jinx.json');
+    JINXES = await res.json();
+  } catch(e) { console.warn('No s’han pogut carregar els maleficis:', e); }
 
   // ── State ────────────────────────────────────────────────────────
   let playerCount = null;
@@ -190,8 +251,36 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   let lastDraw = null;
   let showAbilities = false;
   let editingFarolSlot = null;
+  let customEditions = [];
+  let editionMembers = {};
+  let selectorTeamFilter = 'all';
+  let farolTeamFilter = 'all';
+
+  function loadCustomEditions() {
+    try { customEditions = JSON.parse(localStorage.getItem('botc_custom_editions') || '[]'); }
+    catch(_) { customEditions = []; }
+    if (!customEditions.find(e => e.id === 'custom')) {
+      customEditions.unshift({ id: 'custom', name: 'Paisings', icon: '🐉' });
+    }
+    try { editionMembers = JSON.parse(localStorage.getItem('botc_edition_members') || '{}'); }
+    catch(_) { editionMembers = {}; }
+  }
+
+  function renderCustomEditionToggles() {
+    const wrap = document.getElementById('custom-edition-toggles');
+    if (!wrap) return;
+    wrap.innerHTML = customEditions
+      .filter(ed => ed.id !== 'custom')
+      .map(ed => `<button class="col-btn" data-col="${ed.id}">${ed.icon || '📘'} ${ed.name}</button>`)
+      .join('');
+    wrap.querySelectorAll('.col-btn').forEach(btn => {
+      btn.classList.toggle('active', selectedCollections.has(btn.dataset.col));
+      btn.addEventListener('click', () => toggleCollection(btn));
+    });
+  }
 
   function loadState() {
+    loadCustomEditions();
     try {
       const s = JSON.parse(localStorage.getItem('botc_hat') || '{}');
       hat         = s.hat         || [];
@@ -223,7 +312,100 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   }
 
   function collectionPool() {
-    return ALL_CHARS.filter(c => selectedCollections.has(c.edition));
+    const ids = new Set();
+    ALL_CHARS.forEach(c => {
+      if (selectedCollections.has(c.edition)) ids.add(c.id);
+    });
+    selectedCollections.forEach(edId => {
+      (editionMembers[edId] || []).forEach(id => ids.add(id));
+    });
+    return ALL_CHARS.filter(c => ids.has(c.id));
+  }
+
+  function addComp(comp, delta) {
+    const next = { ...comp };
+    Object.entries(delta).forEach(([team, change]) => {
+      if (team === 'note') return;
+      next[team] = Math.max(0, (next[team] || 0) + change);
+    });
+    return next;
+  }
+
+  function effectiveCompFor(chars, base = getComp(playerCount)) {
+    if (!base) return null;
+    let comp = { ...base };
+    const ids = new Set(chars.map(c => c.id));
+    ids.forEach(id => {
+      if (SETUP_COMP_RULES[id]) comp = addComp(comp, SETUP_COMP_RULES[id]);
+    });
+    if (ids.has('atheist')) {
+      comp = {
+        ...comp,
+        townsfolk: (comp.townsfolk || 0) + (comp.minion || 0) + (comp.demon || 0),
+        minion: 0,
+        demon: 0,
+      };
+    }
+    return comp;
+  }
+
+  function countsFor(chars) {
+    const counts = {};
+    chars.forEach(c => { counts[c.team] = (counts[c.team] || 0) + 1; });
+    return counts;
+  }
+
+  function checkCompFor(chars, comp) {
+    if (!comp) return true;
+    const counts = countsFor(chars);
+    return Object.entries(comp).every(([team, needed]) => (counts[team] || 0) === needed);
+  }
+
+  function missingRequiredIds(chars) {
+    const ids = new Set(chars.map(c => c.id));
+    return FORCED_PAIRS
+      .filter(rule => ids.has(rule.id) && !ids.has(rule.requires))
+      .map(rule => rule.requires);
+  }
+
+  function coherenceReport(chars) {
+    const ids = new Set(chars.map(c => c.id));
+    const errors = [];
+    const warnings = [];
+    const notes = [];
+
+    FORCED_PAIRS.forEach(rule => {
+      if (ids.has(rule.id) && !ids.has(rule.requires)) errors.push(rule.label);
+    });
+    if ((ids.has('spy') || ids.has('widow')) && ids.has('heretic') && ids.has('choirboy')) {
+      errors.push('L’Heretge i el Nen del Cor no funcionen bé amb personatges que poden veure el Grimori.');
+    }
+    if (ids.has('hermit') && ids.has('drunk')) {
+      errors.push('L’Ermità i el Borratxo junts compliquen massa la preparació; evita aquesta combinació.');
+    }
+
+    ids.forEach(id => {
+      if (SETUP_COMP_RULES[id]?.note) notes.push(SETUP_COMP_RULES[id].note);
+      if (FLEXIBLE_SETUP_NOTES[id]) warnings.push(FLEXIBLE_SETUP_NOTES[id]);
+    });
+
+    JINXES.forEach(group => {
+      if (!ids.has(group.id)) return;
+      group.jinx?.forEach(j => {
+        if (ids.has(j.id)) {
+          const a = getNameCa(group.id, ALL_CHARS.find(c => c.id === group.id)?.name || group.id);
+          const b = getNameCa(j.id, ALL_CHARS.find(c => c.id === j.id)?.name || j.id);
+          warnings.push(`Malefici actiu: ${a} + ${b}.`);
+        }
+      });
+    });
+
+    return {
+      ok: !errors.length,
+      errors: [...new Set(errors)],
+      warnings: [...new Set(warnings)],
+      notes: [...new Set(notes)],
+    };
   }
 
   function shuffle(arr) {
@@ -232,13 +414,173 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     return a;
   }
 
+  function uniqueChars(chars) {
+    const seen = new Set();
+    return chars.filter(c => {
+      if (!c || seen.has(c.id)) return false;
+      seen.add(c.id);
+      return true;
+    });
+  }
+
+  function ensureRequiredPairs(chars, pool) {
+    let next = uniqueChars(chars);
+    const poolById = new Map(pool.map(c => [c.id, c]));
+    FORCED_PAIRS.forEach(rule => {
+      const ids = new Set(next.map(c => c.id));
+      if (!ids.has(rule.id) || ids.has(rule.requires)) return;
+      const required = poolById.get(rule.requires) || ALL_CHARS.find(c => c.id === rule.requires);
+      if (required) next.push(required);
+    });
+    return uniqueChars(next);
+  }
+
+  function rebalanceToComp(chars, comp, pool) {
+    if (!comp) return uniqueChars(chars).slice(0, playerCount || chars.length);
+    let next = uniqueChars(chars);
+    const requiredIds = new Set(
+      FORCED_PAIRS.flatMap(rule => {
+        const ids = new Set(next.map(c => c.id));
+        return ids.has(rule.id) ? [rule.id, rule.requires] : [];
+      })
+    );
+    const poolByTeam = {};
+    pool.forEach(c => { (poolByTeam[c.team] || (poolByTeam[c.team] = [])).push(c); });
+    Object.keys(poolByTeam).forEach(team => { poolByTeam[team] = shuffle(poolByTeam[team]); });
+
+    const removeExtra = team => {
+      while ((countsFor(next)[team] || 0) > (comp[team] || 0)) {
+        const idx = next.findIndex(c => c.team === team && !requiredIds.has(c.id));
+        if (idx === -1) return false;
+        next.splice(idx, 1);
+      }
+      return true;
+    };
+    const addMissing = team => {
+      while ((countsFor(next)[team] || 0) < (comp[team] || 0)) {
+        const used = new Set(next.map(c => c.id));
+        const candidate = (poolByTeam[team] || []).find(c => !used.has(c.id));
+        if (!candidate) return false;
+        next.push(candidate);
+      }
+      return true;
+    };
+
+    for (const team of ['townsfolk','outsider','minion','demon','traveller']) {
+      if (!removeExtra(team)) return next;
+    }
+    for (const team of ['demon','minion','outsider','traveller','townsfolk']) {
+      if (!addMissing(team)) return next;
+    }
+    return uniqueChars(next);
+  }
+
+  function fixedAwareRebalance(chars, comp, pool, fixedIds) {
+    if (!comp) return uniqueChars(chars).slice(0, playerCount || chars.length);
+    let next = uniqueChars(chars);
+    const requiredIds = new Set(
+      FORCED_PAIRS.flatMap(rule => {
+        const ids = new Set(next.map(c => c.id));
+        return ids.has(rule.id) ? [rule.id, rule.requires] : [];
+      })
+    );
+    fixedIds.forEach(id => requiredIds.add(id));
+
+    const poolByTeam = {};
+    pool.forEach(c => { (poolByTeam[c.team] || (poolByTeam[c.team] = [])).push(c); });
+    Object.keys(poolByTeam).forEach(team => { poolByTeam[team] = shuffle(poolByTeam[team]); });
+
+    const removeExtra = team => {
+      while ((countsFor(next)[team] || 0) > (comp[team] || 0)) {
+        const idx = next.findIndex(c => c.team === team && !requiredIds.has(c.id));
+        if (idx === -1) return false;
+        next.splice(idx, 1);
+      }
+      return true;
+    };
+    const addMissing = team => {
+      while ((countsFor(next)[team] || 0) < (comp[team] || 0)) {
+        const used = new Set(next.map(c => c.id));
+        const candidate = (poolByTeam[team] || []).find(c => !used.has(c.id));
+        if (!candidate) return false;
+        next.push(candidate);
+      }
+      return true;
+    };
+
+    for (const team of ['townsfolk','outsider','minion','demon','traveller']) {
+      if (!removeExtra(team)) return next;
+    }
+    for (const team of ['demon','minion','outsider','traveller','townsfolk']) {
+      if (!addMissing(team)) return next;
+    }
+    return uniqueChars(next);
+  }
+
+  function makeRandomHat(pool, baseComp) {
+    const fallbackComp = baseComp || {townsfolk:Math.max(1,playerCount-3),outsider:0,minion:1,demon:1};
+    for (let attempt = 0; attempt < 400; attempt++) {
+      const byTeam = {
+        townsfolk: shuffle(pool.filter(c=>c.team==='townsfolk')),
+        outsider:  shuffle(pool.filter(c=>c.team==='outsider')),
+        minion:    shuffle(pool.filter(c=>c.team==='minion')),
+        demon:     shuffle(pool.filter(c=>c.team==='demon')),
+        traveller: shuffle(pool.filter(c=>c.team==='traveller')),
+      };
+      let assigned = [];
+      assigned.push(...byTeam.demon.slice(0, fallbackComp.demon || 0));
+      assigned.push(...byTeam.minion.slice(0, fallbackComp.minion || 0));
+      assigned.push(...byTeam.outsider.slice(0, fallbackComp.outsider || 0));
+      if (fallbackComp.traveller) assigned.push(...byTeam.traveller.slice(0, fallbackComp.traveller));
+      assigned.push(...byTeam.townsfolk.slice(0, playerCount - assigned.length));
+      if (assigned.length < playerCount) {
+        const used = new Set(assigned.map(c=>c.id));
+        assigned.push(...shuffle(pool.filter(c=>!used.has(c.id))).slice(0, playerCount-assigned.length));
+      }
+      for (let i = 0; i < 5; i++) {
+        assigned = ensureRequiredPairs(assigned, pool);
+        assigned = rebalanceToComp(assigned, effectiveCompFor(assigned, fallbackComp), pool);
+      }
+      const comp = effectiveCompFor(assigned, fallbackComp);
+      if (assigned.length === playerCount && checkCompFor(assigned, comp) && coherenceReport(assigned).ok) {
+        return assigned;
+      }
+    }
+    return null;
+  }
+
+  function makeAutocompleteHat(fixedChars, pool, baseComp) {
+    const fixed = uniqueChars(fixedChars);
+    if (!playerCount || fixed.length >= playerCount) return null;
+    const fixedIds = new Set(fixed.map(c => c.id));
+    const fallbackComp = baseComp || {townsfolk:Math.max(1,playerCount-3),outsider:0,minion:1,demon:1};
+    for (let attempt = 0; attempt < 600; attempt++) {
+      let assigned = [...fixed];
+      const available = shuffle(pool.filter(c => !fixedIds.has(c.id)));
+      while (assigned.length < playerCount && available.length) {
+        assigned.push(available.shift());
+      }
+      for (let i = 0; i < 8; i++) {
+        assigned = ensureRequiredPairs(assigned, pool);
+        assigned = fixedAwareRebalance(assigned, effectiveCompFor(assigned, fallbackComp), pool, fixedIds);
+      }
+      const ids = new Set(assigned.map(c => c.id));
+      const keepsFixed = [...fixedIds].every(id => ids.has(id));
+      const comp = effectiveCompFor(assigned, fallbackComp);
+      if (assigned.length === playerCount && keepsFixed && checkCompFor(assigned, comp) && coherenceReport(assigned).ok) {
+        return assigned;
+      }
+    }
+    return null;
+  }
+
   function tokenHtml(c, removable, idx) {
     const url  = imgUrl(c.id);
     const name = getNameCa(c.id, c.name);
     const img  = url
-      ? `<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`
+      ? `<img src="${url}" alt="${name}" onerror="this.style.display='none'" loading="lazy"/>`
       : `<span class="custom-initial">${name[0]}</span>`;
-    return `<div class="hat-item">
+    return `<div class="hat-item has-power-tooltip"${powerTooltipAttr(c)}>
       <div class="hat-token team-${c.team}" title="${name}">${img}</div>
       <div class="hat-token-label">${name}</div>
       ${removable ? `<button class="hat-remove-btn" data-idx="${idx}" title="Treure">✕</button>` : ''}
@@ -260,7 +602,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     if (!comp) { bar.style.display = 'none'; return; }
     bar.style.display = '';
     const CHIP_FMT = {
-      townsfolk: n => `${n} Vilatan${n!==1?'s':''}`,
+      townsfolk: n => `${n} ${n!==1?'Vilatans':'Vilatà'}`,
       outsider:  n => `${n} Foraster${n!==1?'s':''}`,
       minion:    n => `${n} Esbirro${n!==1?'s':''}`,
       demon:     n => `${n} Dimoni`,
@@ -307,9 +649,9 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
       const url  = imgUrl(c.id);
       const name = getNameCa(c.id, c.name);
       const img  = url
-        ? `<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`
+        ? `<img src="${url}" alt="${name}" onerror="this.style.display='none'" loading="lazy"/>`
         : `<span class="custom-initial">${name[0]}</span>`;
-      return `<div class="farol-slot-row">
+      return `<div class="farol-slot-row has-power-tooltip"${powerTooltipAttr(c)}>
         <div class="farol-token-sm team-${c.team}">${img}</div>
         <div class="farol-slot-info">
           <span class="farol-slot-name">${name}</span>
@@ -330,10 +672,14 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     const badge    = document.getElementById('hat-count-badge');
     const startBtn = document.getElementById('btn-start');
     const info     = document.getElementById('start-info');
+    const autocompleteBtn = document.getElementById('btn-autocomplete');
     if (!empty || !tokens) return;
 
     if (badge) badge.textContent = hat.length ? String(hat.length) : '';
     document.getElementById('btn-sheet').style.display = hat.length ? '' : 'none';
+    if (autocompleteBtn) {
+      autocompleteBtn.style.display = playerCount && hat.length > 0 && hat.length < playerCount ? '' : 'none';
+    }
 
     if (!hat.length) {
       empty.style.display  = '';
@@ -350,16 +696,20 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
       });
     }
 
+    renderCoherencePanel();
     renderFarolSubsection();
 
     // Start button state (only update if no success message shown)
     if (!info.querySelector('a')) {
-      const comp  = getComp(playerCount);
-      const ready = playerCount && hat.length >= playerCount && checkComp(comp);
+      const comp  = effectiveCompFor(hat);
+      const report = coherenceReport(hat);
+      const ready = playerCount && hat.length >= playerCount && checkComp(comp) && report.ok;
       startBtn.disabled = !ready;
       if (playerCount && hat.length < playerCount) {
         const need = playerCount - hat.length;
         info.innerHTML = `<span style="color:var(--text-muted)">Cal ${need} personatge${need!==1?'s':''} més</span>`;
+      } else if (!report.ok) {
+        info.innerHTML = `<span style="color:var(--red-light)">⚠ Cal resoldre la coherència interna</span>`;
       } else if (comp && !checkComp(comp)) {
         info.innerHTML = `<span style="color:var(--red-light)">⚠ Composició incorrecta</span>`;
       } else {
@@ -369,10 +719,30 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   }
 
   function checkComp(comp) {
-    if (!comp) return true;
-    const counts = {};
-    hat.forEach(c => { counts[c.team] = (counts[c.team]||0)+1; });
-    return Object.entries(comp).every(([t,n]) => (counts[t]||0) === n);
+    return checkCompFor(hat, comp);
+  }
+
+  function renderCoherencePanel() {
+    const panel = document.getElementById('coherence-panel');
+    if (!panel) return;
+    const report = coherenceReport(hat);
+    if (!hat.length || (!report.errors.length && !report.warnings.length && !report.notes.length)) {
+      panel.style.display = 'none';
+      panel.innerHTML = '';
+      return;
+    }
+    panel.style.display = '';
+    const blocks = [];
+    if (report.errors.length) {
+      blocks.push(`<div class="coherence-block coherence-error"><strong>Cal corregir</strong>${report.errors.map(x => `<span>${x}</span>`).join('')}</div>`);
+    }
+    if (report.warnings.length) {
+      blocks.push(`<div class="coherence-block coherence-warning"><strong>Avisos del narrador</strong>${report.warnings.map(x => `<span>${x}</span>`).join('')}</div>`);
+    }
+    if (report.notes.length) {
+      blocks.push(`<div class="coherence-block coherence-note"><strong>Preparació aplicada</strong>${report.notes.map(x => `<span>${x}</span>`).join('')}</div>`);
+    }
+    panel.innerHTML = blocks.join('');
   }
 
   // ── Player count ──────────────────────────────────────────────────
@@ -386,17 +756,19 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   });
 
   // ── Collection toggles ────────────────────────────────────────────
+  function toggleCollection(btn) {
+    const col = btn.dataset.col;
+    if (selectedCollections.has(col)) {
+      selectedCollections.delete(col); btn.classList.remove('active');
+    } else {
+      selectedCollections.add(col);    btn.classList.add('active');
+    }
+    updateSteps(); saveState();
+    if (document.getElementById('char-selector-modal').style.display !== 'none') renderSelectorGrid();
+  }
+
   document.querySelectorAll('.col-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const col = btn.dataset.col;
-      if (selectedCollections.has(col)) {
-        selectedCollections.delete(col); btn.classList.remove('active');
-      } else {
-        selectedCollections.add(col);    btn.classList.add('active');
-      }
-      updateSteps(); saveState();
-      if (document.getElementById('char-selector-modal').style.display !== 'none') renderSelectorGrid();
-    });
+    btn.addEventListener('click', () => toggleCollection(btn));
   });
 
   // ── Randomize hat ─────────────────────────────────────────────────
@@ -404,30 +776,26 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     if (!playerCount || !selectedCollections.size) return;
     const pool = collectionPool();
     const comp = getComp(playerCount) || {townsfolk:Math.max(1,playerCount-3),outsider:0,minion:1,demon:1};
-    const byTeam = {
-      townsfolk: shuffle(pool.filter(c=>c.team==='townsfolk')),
-      outsider:  shuffle(pool.filter(c=>c.team==='outsider')),
-      minion:    shuffle(pool.filter(c=>c.team==='minion')),
-      demon:     shuffle(pool.filter(c=>c.team==='demon')),
-      traveller: shuffle(pool.filter(c=>c.team==='traveller')),
-    };
     const missing = [];
-    if (byTeam.demon.length  < comp.demon)   missing.push(`${comp.demon} dimoni${comp.demon!==1?'s':''}`);
-    if (byTeam.minion.length < comp.minion)  missing.push(`${comp.minion} esbirro${comp.minion!==1?'s':''}`);
+    const byTeam = {
+      townsfolk: pool.filter(c=>c.team==='townsfolk'),
+      outsider:  pool.filter(c=>c.team==='outsider'),
+      minion:    pool.filter(c=>c.team==='minion'),
+      demon:     pool.filter(c=>c.team==='demon'),
+      traveller: pool.filter(c=>c.team==='traveller'),
+    };
+    if (byTeam.demon.length  < (comp.demon || 0))   missing.push(`${comp.demon} dimoni${comp.demon!==1?'s':''}`);
+    if (byTeam.minion.length < (comp.minion || 0))  missing.push(`${comp.minion} esbirro${comp.minion!==1?'s':''}`);
     if (comp.traveller && byTeam.traveller.length < comp.traveller) missing.push(`${comp.traveller} viatger${comp.traveller!==1?'s':''}`);
     if (missing.length) {
       document.getElementById('start-info').innerHTML = `<span style="color:var(--red-light)">⚠ Falten: ${missing.join(', ')}</span>`;
       return;
     }
-    let assigned = [];
-    assigned.push(...byTeam.demon.slice(0, comp.demon));
-    assigned.push(...byTeam.minion.slice(0, comp.minion));
-    assigned.push(...byTeam.outsider.slice(0, comp.outsider));
-    if (comp.traveller) assigned.push(...byTeam.traveller.slice(0, comp.traveller));
-    assigned.push(...byTeam.townsfolk.slice(0, playerCount - assigned.length));
-    if (assigned.length < playerCount) {
-      const used = new Set(assigned.map(c=>c.id));
-      assigned.push(...shuffle(pool.filter(c=>!used.has(c.id))).slice(0, playerCount-assigned.length));
+    const assigned = makeRandomHat(pool, comp);
+    if (!assigned) {
+      document.getElementById('start-info').innerHTML =
+        '<span style="color:var(--red-light)">⚠ No he pogut trobar una combinació coherent amb aquestes col·leccions.</span>';
+      return;
     }
     hat = assigned;
     liveFarols = []; // reset so renderFarolSubsection recomputes
@@ -436,9 +804,34 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     saveState(); renderHat(); renderSelectorGrid();
   });
 
+  document.getElementById('btn-autocomplete').addEventListener('click', () => {
+    if (!playerCount || !selectedCollections.size || !hat.length || hat.length >= playerCount) return;
+    const pool = collectionPool();
+    const poolIds = new Set(pool.map(c => c.id));
+    const fixedOutsidePool = hat.filter(c => !poolIds.has(c.id) && !c.id.startsWith('custom_'));
+    if (fixedOutsidePool.length) {
+      document.getElementById('start-info').innerHTML =
+        '<span style="color:var(--red-light)">⚠ Alguns personatges triats no són dins les col·leccions seleccionades.</span>';
+      return;
+    }
+    const comp = getComp(playerCount) || {townsfolk:Math.max(1,playerCount-3),outsider:0,minion:1,demon:1};
+    const completed = makeAutocompleteHat(hat, pool, comp);
+    if (!completed) {
+      document.getElementById('start-info').innerHTML =
+        '<span style="color:var(--red-light)">⚠ No he pogut autocompletar una alineació coherent amb aquests personatges.</span>';
+      return;
+    }
+    hat = completed;
+    liveFarols = [];
+    document.getElementById('start-info').textContent = '';
+    saveState(); renderHat(); renderSelectorGrid();
+  });
+
   // ── Manual: open picker ───────────────────────────────────────────
   document.getElementById('btn-manual').addEventListener('click', () => {
     document.getElementById('selector-search').value = '';
+    selectorTeamFilter = 'all';
+    syncTeamFilterButtons('selector', selectorTeamFilter);
     renderSelectorGrid();
     document.getElementById('char-selector-modal').style.display = '';
   });
@@ -453,31 +846,32 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   document.getElementById('btn-start').addEventListener('click', () => {
     if (!playerCount || hat.length < playerCount) return;
     const assigned = shuffle([...hat]).slice(0, playerCount);
-    const players  = assigned.map((c,i) => ({
-      id: Date.now()+i,
-      name: `Jugador ${i+1}`,
-      charId: c.id,
-      dead: false,
-      reminders: [],
-      customChar: c.id.startsWith('custom_') ? c : null,
-    }));
+    const comp = effectiveCompFor(hat);
+    const report = coherenceReport(hat);
+    if (!checkComp(comp) || !report.ok) {
+      renderHat();
+      return;
+    }
     if (!liveFarols.length) liveFarols = pickFarols();
-    localStorage.setItem('botc_game', JSON.stringify({
-      players, bluffs: liveFarols.map(c=>c.id), notes:'',
+    localStorage.setItem('botc_assignment', JSON.stringify({
+      count: playerCount,
+      pool: assigned.map(c => c.id),
+      slots: Array.from({ length: playerCount }, (_, i) => ({ index: i, name: '', charId: null })),
+      bluffs: liveFarols.map(c => c.id),
+      createdAt: Date.now(),
     }));
-    localStorage.setItem('botc_custom_chars', JSON.stringify(hat.filter(c=>c.id.startsWith('custom_'))));
+    localStorage.removeItem('botc_game');
     lastDraw = {assigned, farols: liveFarols};
     saveState();
-    document.getElementById('start-info').innerHTML =
-      `<span style="color:var(--green-light)">✓ ${assigned.length} personatges assignats</span>` +
-      `<a href="/grimori" class="btn btn-primary btn-sm" style="text-decoration:none;margin-left:.75rem">Obrir Grimori →</a>`;
-    document.getElementById('btn-start').disabled = true;
+    location.href = '/assignacio';
   });
 
   // ── Farol picker modal ────────────────────────────────────────────
   function openFarolPicker(slot) {
     editingFarolSlot = slot;
     document.getElementById('farol-search').value = '';
+    farolTeamFilter = 'all';
+    syncTeamFilterButtons('farol', farolTeamFilter);
     renderFarolPickerGrid();
     document.getElementById('farol-picker-modal').style.display = '';
   }
@@ -494,6 +888,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     const hatIds  = new Set(hat.map(c=>c.id));
     const farolIds= new Set(liveFarols.filter((_,i)=>i!==editingFarolSlot).map(c=>c.id));
     let chars = collectionPool().filter(c => !hatIds.has(c.id) && !farolIds.has(c.id));
+    if (farolTeamFilter !== 'all') chars = chars.filter(c => c.team === farolTeamFilter);
     if (q) chars = chars.filter(c => getNameCa(c.id,c.name).toLowerCase().includes(q)||c.name.toLowerCase().includes(q));
     const grid = document.getElementById('farol-picker-grid');
     if (!grid) return;
@@ -501,8 +896,8 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     grid.innerHTML = chars.map(c => {
       const url  = imgUrl(c.id);
       const name = getNameCa(c.id, c.name);
-      return `<button class="sel-char team-${c.team}" data-id="${c.id}">
-        <div class="sel-img team-${c.team}">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${name[0]}</span>`}</div>
+      return `<button class="sel-char has-power-tooltip team-${c.team}" data-id="${c.id}"${powerTooltipAttr(c)}>
+        <div class="sel-img team-${c.team}">${url?`<img src="${url}" alt="${name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${name[0]}</span>`}</div>
         <div class="sel-char-info">
           <span class="sel-name">${name}</span>
           <span class="sel-ability">${getAbilityCa(c.id, c.ability||'')}</span>
@@ -526,6 +921,8 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   // ── Character picker modal ────────────────────────────────────────
   document.getElementById('btn-add-char').addEventListener('click', () => {
     document.getElementById('selector-search').value = '';
+    selectorTeamFilter = 'all';
+    syncTeamFilterButtons('selector', selectorTeamFilter);
     renderSelectorGrid();
     document.getElementById('char-selector-modal').style.display = '';
   });
@@ -548,12 +945,14 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     const q     = (document.getElementById('selector-search')?.value||'').toLowerCase();
     const inHat = new Set(hat.map(c=>c.id));
     let chars   = collectionPool();
+    if (selectorTeamFilter !== 'all') chars = chars.filter(c => c.team === selectorTeamFilter);
     if (q) chars = chars.filter(c => getNameCa(c.id,c.name).toLowerCase().includes(q)||c.name.toLowerCase().includes(q));
 
     // Composition limits
-    const comp   = getComp(playerCount);
+    const comp   = effectiveCompFor(hat);
     const counts = {};
     hat.forEach(c => { counts[c.team] = (counts[c.team]||0)+1; });
+    const missingRequired = new Set(missingRequiredIds(hat));
 
     // Render comp progress in modal
     const compEl = document.getElementById('selector-comp');
@@ -575,11 +974,11 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     grid.innerHTML = chars.map(c => {
       const inH    = inHat.has(c.id);
       const limit  = comp ? comp[c.team] : undefined;
-      const locked = !inH && limit !== undefined && (counts[c.team]||0) >= limit;
+      const locked = !inH && !missingRequired.has(c.id) && limit !== undefined && (counts[c.team]||0) >= limit;
       const url    = imgUrl(c.id);
       const name   = getNameCa(c.id, c.name);
-      return `<button class="sel-char ${inH?'in-hat':''} ${locked?'team-locked':''} team-${c.team}" data-id="${c.id}">
-        <div class="sel-img team-${c.team}">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${name[0]}</span>`}</div>
+      return `<button class="sel-char has-power-tooltip ${inH?'in-hat':''} ${locked?'team-locked':''} team-${c.team}" data-id="${c.id}"${powerTooltipAttr(c)}>
+        <div class="sel-img team-${c.team}">${url?`<img src="${url}" alt="${name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${name[0]}</span>`}</div>
         <div class="sel-char-info">
           <span class="sel-name">${name}</span>
           <span class="sel-ability">${getAbilityCa(c.id, c.ability||'')}</span>
@@ -602,6 +1001,28 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     });
   }
 
+  function syncTeamFilterButtons(scope, activeTeam) {
+    document.querySelectorAll(`[data-filter-scope="${scope}"] .team-filter-btn`).forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.team === activeTeam);
+    });
+  }
+
+  document.querySelectorAll('[data-filter-scope="selector"] .team-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectorTeamFilter = btn.dataset.team;
+      syncTeamFilterButtons('selector', selectorTeamFilter);
+      renderSelectorGrid();
+    });
+  });
+
+  document.querySelectorAll('[data-filter-scope="farol"] .team-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      farolTeamFilter = btn.dataset.team;
+      syncTeamFilterButtons('farol', farolTeamFilter);
+      renderFarolPickerGrid();
+    });
+  });
+
   // ── Sheet modal ───────────────────────────────────────────────────
   document.getElementById('btn-sheet').addEventListener('click', () => {
     const source  = hat;
@@ -621,7 +1042,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
             const url  = imgUrl(c.id);
             const name = getNameCa(c.id, c.name);
             return `<div class="sheet-char">
-              <div class="sheet-token team-${c.team}">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${name[0]}</span>`}</div>
+              <div class="sheet-token team-${c.team}">${url?`<img src="${url}" alt="${name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${name[0]}</span>`}</div>
               <div>
                 <div style="font-size:.9rem;font-weight:600">${name}</div>
                 <div style="font-size:.78rem;color:var(--text-muted)">${getAbilityCa(c.id,c.ability||'')}</div>
@@ -645,6 +1066,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     hat = []; liveFarols = []; lastDraw = null;
     saveState();
     localStorage.removeItem('botc_game');
+    localStorage.removeItem('botc_assignment');
     document.getElementById('start-info').textContent = '';
     document.getElementById('btn-start').disabled = true;
     renderHat();
@@ -652,6 +1074,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 
   // ── Init ──────────────────────────────────────────────────────────
   loadState();
+  renderCustomEditionToggles();
 
   if (playerCount) {
     const btn = document.querySelector(`.count-btn[data-count="${playerCount}"]`);
@@ -667,10 +1090,11 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   if (hat.length > 0 || liveFarols.length > 0) renderHat();
 
   if (lastDraw?.assigned?.length) {
-    document.getElementById('start-info').innerHTML =
-      `<span style="color:var(--green-light)">✓ ${lastDraw.assigned.length} personatges assignats</span>` +
-      `<a href="/grimori" class="btn btn-primary btn-sm" style="text-decoration:none;margin-left:.75rem">Obrir Grimori →</a>`;
-    document.getElementById('btn-start').disabled = true;
+    const comp = effectiveCompFor(hat);
+    if (hat.length >= playerCount && checkComp(comp) && coherenceReport(hat).ok) {
+      document.getElementById('start-info').innerHTML =
+        `<span style="color:var(--green-light)">✓ ${lastDraw.assigned.length} personatges preparats</span>`;
+    }
   }
 })();
 </script>
@@ -723,6 +1147,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 
 /* ── Collection toggles ─────────────────────────────────────────── */
 .collection-toggles { display: flex; flex-wrap: wrap; gap: .5rem; }
+.collection-toggles-inline { display: contents; }
 .col-btn {
   padding: .4rem .9rem; border-radius: 99px;
   border: 1px solid var(--border); background: var(--bg);
@@ -772,6 +1197,106 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 }
 .hat-item:hover .hat-remove-btn { display: flex; }
 
+/* ── Power tooltip ──────────────────────────────────────────────── */
+.has-power-tooltip {
+  position: relative;
+}
+.has-power-tooltip::after {
+  content: attr(data-power);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%) translateY(4px);
+  width: min(260px, 78vw);
+  padding: .55rem .65rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-accent);
+  background: rgba(12, 7, 6, .96);
+  color: var(--text);
+  box-shadow: 0 10px 30px rgba(0,0,0,.45);
+  font-size: .75rem;
+  line-height: 1.35;
+  text-align: left;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 50;
+  transition: opacity .12s ease, transform .12s ease, visibility .12s ease;
+}
+.has-power-tooltip::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 4px);
+  transform: translateX(-50%) translateY(4px);
+  border: 6px solid transparent;
+  border-top-color: var(--border-accent);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 51;
+  transition: opacity .12s ease, transform .12s ease, visibility .12s ease;
+}
+.has-power-tooltip:hover::after,
+.has-power-tooltip:focus-visible::after,
+.has-power-tooltip:hover::before,
+.has-power-tooltip:focus-visible::before {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+.sel-char.has-power-tooltip::after,
+.sel-char.has-power-tooltip::before,
+.farol-slot-row.has-power-tooltip::after,
+.farol-slot-row.has-power-tooltip::before {
+  bottom: auto;
+  top: calc(100% + 8px);
+}
+.sel-char.has-power-tooltip::before,
+.farol-slot-row.has-power-tooltip::before {
+  top: calc(100% + 2px);
+  border-top-color: transparent;
+  border-bottom-color: var(--border-accent);
+}
+
+/* ── Coherence ─────────────────────────────────────────────────── */
+.coherence-panel {
+  display: grid;
+  gap: .5rem;
+  margin: -.35rem 0 1rem;
+}
+.coherence-block {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  padding: .65rem .8rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  font-size: .78rem;
+  line-height: 1.35;
+}
+.coherence-block strong {
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.coherence-error {
+  border-color: rgba(224,72,72,.55);
+  background: rgba(224,72,72,.11);
+  color: var(--red-light);
+}
+.coherence-warning {
+  border-color: rgba(212,160,48,.5);
+  background: rgba(212,160,48,.1);
+  color: var(--accent);
+}
+.coherence-note {
+  border-color: rgba(74,184,120,.45);
+  background: rgba(74,184,120,.09);
+  color: #7ed69d;
+}
+
 /* ── Farols subsection (inline in step 3) ───────────────────────── */
 .farol-subsection {
   margin-bottom: 1rem;
@@ -812,6 +1337,29 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 /* ── Selector toolbar + comp progress ───────────────────────────── */
 .selector-toolbar { display: flex; gap: .5rem; align-items: center; margin-bottom: .6rem; }
 #btn-toggle-desc.active { background: rgba(196,136,42,.15); border-color: var(--accent); color: var(--accent); }
+
+.team-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  margin: 0 0 .7rem;
+}
+.team-filter-btn {
+  padding: .22rem .55rem;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: .72rem;
+  cursor: pointer;
+  transition: all .15s;
+}
+.team-filter-btn:hover,
+.team-filter-btn.active {
+  border-color: var(--team-color, var(--accent));
+  color: var(--team-color, var(--accent));
+  background: var(--team-bg, rgba(196,136,42,.12));
+}
 
 .selector-comp {
   display: flex; flex-wrap: wrap; gap: .3rem;

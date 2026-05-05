@@ -1,0 +1,543 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { charNamesCa } from '../data/char-names-ca';
+import { charAbilitiesCa } from '../data/char-abilities-ca';
+const charNamesCaJson     = JSON.stringify(charNamesCa);
+const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
+---
+
+<Layout title="Assignació de personatges" activePage="partida">
+  <div class="assignment-page">
+    <div class="assignment-panel">
+      <div class="assignment-header">
+        <div>
+          <h1 class="assignment-title">Assigna els personatges</h1>
+          <p class="assignment-copy">Toca una fitxa numerada per revelar un personatge aleatori. Les fitxes fosques ja han estat triades.</p>
+        </div>
+        <a class="assignment-close" href="/" aria-label="Tornar a partida">✕</a>
+      </div>
+
+      <div id="assignment-grid" class="assignment-grid"></div>
+
+      <div id="assignment-actions" class="assignment-actions"></div>
+    </div>
+  </div>
+
+  <div id="name-modal" class="modal-overlay assign-reveal-overlay" style="display:none">
+    <div class="modal assign-reveal-modal">
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <div id="modal-token" class="assign-char-token"></div>
+          <div>
+            <h3 id="modal-char-name"></h3>
+            <div id="modal-char-team" class="badge" style="margin-top:.25rem"></div>
+          </div>
+        </div>
+        <button class="modal-close btn" id="close-name-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="modal-char-ability" class="assign-ability"></p>
+        <div class="form-group">
+          <label class="form-label">Nom del jugador</label>
+          <input id="player-name-input" class="input" type="text" placeholder="Ex: Laia" />
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:.75rem;margin-top:1rem">
+          <button class="btn btn-ghost" id="cancel-name-modal">Tancar</button>
+          <button class="btn btn-primary" id="save-name-modal">Desar nom</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script id="char-names-ca-data"     type="application/json" set:html={charNamesCaJson}></script>
+<script id="char-abilities-ca-data" type="application/json" set:html={charAbilitiesCaJson}></script>
+
+<script is:inline>
+(async function () {
+  const CDN = 'https://www.pocketgrimoire.co.uk';
+  const NAMES_CA     = JSON.parse(document.getElementById('char-names-ca-data').textContent);
+  const ABILITIES_CA = JSON.parse(document.getElementById('char-abilities-ca-data').textContent);
+  const TEAM_LABELS = {townsfolk:'Vilatans',outsider:'Forasters',minion:'Esbirros',demon:'Dimonis',traveller:'Viatgers',fabled:'Llegendes'};
+  function getNameCa(id, nameEn) { return NAMES_CA[id] ?? nameEn; }
+  function getAbilityCa(id, abilityEn) { return ABILITIES_CA[id] ?? abilityEn; }
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  let ALL_CHARS = [];
+  let assignment = null;
+  let activeSlot = null;
+  let pendingRevealSlot = null;
+
+  try {
+    const res = await fetch('/data/characters.json');
+    ALL_CHARS = await res.json();
+    const custom = JSON.parse(localStorage.getItem('botc_custom_chars') || '[]');
+    custom.forEach(c => { if (!ALL_CHARS.find(x => x.id === c.id)) ALL_CHARS.push(c); });
+  } catch(e) { console.error('Error loading characters:', e); }
+
+  function imgUrl(id) {
+    if (!id || id.startsWith('custom_')) return null;
+    return `${CDN}/build/img/roles/${id}_g.webp`;
+  }
+
+  function charById(id) { return ALL_CHARS.find(c => c.id === id); }
+
+  function loadAssignment() {
+    try { assignment = JSON.parse(localStorage.getItem('botc_assignment') || 'null'); }
+    catch(_) { assignment = null; }
+    if (!assignment?.slots?.length || !assignment?.pool?.length) {
+      document.getElementById('assignment-grid').innerHTML = `
+        <div class="assignment-empty">
+          <p>No hi ha cap assignació preparada.</p>
+          <a class="btn btn-primary" href="/">Tornar a partida</a>
+        </div>`;
+      return false;
+    }
+    assignment.slots = assignment.slots.map((slot, index) => ({ index, name: '', charId: null, ...slot }));
+    return true;
+  }
+
+  function saveAssignment() {
+    localStorage.setItem('botc_assignment', JSON.stringify(assignment));
+  }
+
+  function remainingPool() {
+    const used = new Set(assignment.slots.map(s => s.charId).filter(Boolean));
+    return assignment.pool.filter(id => !used.has(id));
+  }
+
+  function revealSlot(index) {
+    const slot = assignment.slots[index];
+    if (slot.charId) {
+      openNameModal(index);
+      return;
+    }
+    const remaining = shuffle(remainingPool());
+    const charId = remaining[0];
+    if (!charId) return;
+    slot.charId = charId;
+    slot.name = slot.name || `Jugador ${index + 1}`;
+    pendingRevealSlot = index;
+    saveAssignment();
+    render();
+    openNameModal(index);
+  }
+
+  function render() {
+    const grid = document.getElementById('assignment-grid');
+    grid.innerHTML = assignment.slots.map((slot, index) => {
+      const char = slot.charId ? charById(slot.charId) : null;
+      const url = char ? imgUrl(char.id) : null;
+      const charName = char ? getNameCa(char.id, char.name) : '';
+      const playerName = slot.name || `Jugador ${index + 1}`;
+      return `<button class="assign-token ${char ? 'revealed' : ''} team-${char?.team || 'townsfolk'}" data-index="${index}" aria-label="Fitxa ${index + 1}">
+        <span class="assign-token-face">
+          ${char && url ? `<img src="${url}" alt="${escapeHtml(charName)}" onerror="this.style.display='none'" loading="lazy"/>` : `<span class="assign-token-number">${index + 1}</span>`}
+        </span>
+        ${char ? `<span class="assign-player-name">${escapeHtml(playerName)}</span><span class="assign-char-name">${escapeHtml(charName)}</span>` : ''}
+      </button>`;
+    }).join('');
+    grid.querySelectorAll('.assign-token').forEach(btn => {
+      btn.addEventListener('click', () => revealSlot(+btn.dataset.index));
+    });
+    renderActions();
+  }
+
+  function renderActions() {
+    const actions = document.getElementById('assignment-actions');
+    const revealed = assignment.slots.filter(s => s.charId).length;
+    const total = assignment.slots.length;
+    if (revealed < total) {
+      actions.innerHTML = `<span class="assignment-progress">${revealed}/${total} personatges assignats</span>`;
+      return;
+    }
+    actions.innerHTML = `
+      <span class="assignment-progress complete">Tots els personatges estan assignats</span>
+      <button class="btn btn-primary btn-lg" id="open-grimoire">Obrir grimori →</button>`;
+    document.getElementById('open-grimoire').addEventListener('click', finalizeGame);
+  }
+
+  function openNameModal(index) {
+    activeSlot = index;
+    const slot = assignment.slots[index];
+    const char = charById(slot.charId);
+    if (!char) return;
+    const url = imgUrl(char.id);
+    const token = document.getElementById('modal-token');
+    token.className = `assign-char-token team-${char.team}`;
+    token.innerHTML = url ? `<img src="${url}" alt="${escapeHtml(getNameCa(char.id, char.name))}" onerror="this.style.display='none'" loading="lazy"/>` : `<span>${escapeHtml(getNameCa(char.id, char.name)[0] || '?')}</span>`;
+    document.getElementById('modal-char-name').textContent = getNameCa(char.id, char.name);
+    const team = document.getElementById('modal-char-team');
+    team.className = `badge team-${char.team}`;
+    team.textContent = TEAM_LABELS[char.team] || char.team;
+    document.getElementById('modal-char-ability').textContent = getAbilityCa(char.id, char.ability || '');
+    document.getElementById('player-name-input').value = slot.name || `Jugador ${index + 1}`;
+    document.getElementById('name-modal').style.display = '';
+    document.getElementById('player-name-input').focus();
+    document.getElementById('player-name-input').select();
+  }
+
+  function closeNameModal() {
+    if (pendingRevealSlot !== null) {
+      const slot = assignment.slots[pendingRevealSlot];
+      if (slot) {
+        slot.charId = null;
+        slot.name = '';
+      }
+      pendingRevealSlot = null;
+      saveAssignment();
+      render();
+    }
+    document.getElementById('name-modal').style.display = 'none';
+    activeSlot = null;
+  }
+
+  function saveActiveName() {
+    if (activeSlot === null) return;
+    const value = document.getElementById('player-name-input').value.trim();
+    assignment.slots[activeSlot].name = value || `Jugador ${activeSlot + 1}`;
+    pendingRevealSlot = null;
+    saveAssignment();
+    closeNameModal();
+    render();
+  }
+
+  function finalizeGame() {
+    const players = assignment.slots.map((slot, i) => {
+      const char = charById(slot.charId);
+      return {
+        id: Date.now() + i,
+        name: slot.name?.trim() || `Jugador ${i + 1}`,
+        charId: slot.charId,
+        dead: false,
+        reminders: [],
+        customChar: char?.id?.startsWith('custom_') ? char : null,
+      };
+    });
+    localStorage.setItem('botc_game', JSON.stringify({
+      players,
+      bluffs: assignment.bluffs || [],
+      notes: '',
+    }));
+    localStorage.setItem('botc_setup', JSON.stringify({
+      chars: assignment.pool,
+      count: assignment.count || players.length,
+    }));
+    location.href = '/grimori';
+  }
+
+  document.getElementById('close-name-modal').addEventListener('click', closeNameModal);
+  document.getElementById('cancel-name-modal').addEventListener('click', closeNameModal);
+  document.getElementById('save-name-modal').addEventListener('click', saveActiveName);
+  document.getElementById('player-name-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveActiveName();
+  });
+  document.getElementById('name-modal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeNameModal();
+  });
+
+  if (loadAssignment()) render();
+})();
+</script>
+
+<style is:global>
+.assignment-page {
+  min-height: calc(100vh - 53px);
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem 4rem;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(196,136,42,.08), transparent 55%),
+    var(--bg);
+}
+
+.assignment-panel {
+  width: min(920px, 100%);
+  background: #d8d5cf;
+  color: #111;
+  border: 2px solid #060606;
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+}
+
+.assignment-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.assignment-title {
+  color: #070707;
+  font-size: clamp(1.7rem, 4vw, 2.6rem);
+  line-height: 1;
+}
+
+.assignment-copy {
+  color: #151515;
+  font-size: clamp(1rem, 2.7vw, 1.45rem);
+  line-height: 1.35;
+  max-width: 760px;
+  margin-top: 1rem;
+}
+
+.assignment-close {
+  color: #050505;
+  font-size: 2.25rem;
+  line-height: 1;
+  padding: .25rem;
+}
+
+.assignment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: clamp(1rem, 3vw, 1.75rem);
+  justify-items: center;
+  align-items: start;
+}
+
+.assign-token {
+  width: min(100%, 170px);
+  min-height: 210px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .45rem;
+  color: #0b0b0b;
+  background: transparent;
+  border: 0;
+}
+
+.assign-token-face {
+  width: clamp(118px, 24vw, 165px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 48% 42%, rgba(235,226,176,.34) 0 9%, transparent 10%),
+    radial-gradient(circle at 50% 56%, rgba(18,17,12,.42) 0 33%, transparent 34%),
+    repeating-radial-gradient(circle at 48% 52%, rgba(248,239,183,.09) 0 1px, transparent 1px 4px),
+    repeating-conic-gradient(from 7deg, rgba(246,235,177,.26) 0deg 3deg, rgba(55,48,30,.08) 3deg 6deg, transparent 6deg 10deg),
+    radial-gradient(circle at 38% 26%, #e4d9aa 0%, #a89b68 28%, #514b31 61%, #232217 100%);
+  border: 3px solid rgba(39,35,23,.9);
+  box-shadow:
+    inset 0 0 0 5px rgba(230,219,162,.55),
+    inset 0 0 0 9px rgba(47,43,28,.65),
+    inset 0 0 0 13px rgba(216,203,145,.28),
+    inset 0 12px 18px rgba(255,248,202,.32),
+    inset 0 -18px 25px rgba(7,7,4,.58),
+    0 4px 10px rgba(0,0,0,.55);
+  overflow: hidden;
+  position: relative;
+  transition: filter .15s, transform .15s, box-shadow .15s;
+}
+
+.assign-token:hover .assign-token-face {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 0 0 5px rgba(230,219,162,.6),
+    inset 0 0 0 9px rgba(47,43,28,.7),
+    inset 0 0 0 13px rgba(216,203,145,.32),
+    inset 0 12px 18px rgba(255,248,202,.38),
+    inset 0 -18px 25px rgba(7,7,4,.6),
+    0 7px 15px rgba(0,0,0,.58);
+}
+
+.assign-token-face::before,
+.assign-token-face::after {
+  content: '';
+  position: absolute;
+  inset: 17%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.assign-token-face::before {
+  border: 2px solid rgba(232,221,166,.3);
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(230,219,162,.2) 0 10%, transparent 11%),
+    radial-gradient(ellipse at 38% 46%, rgba(10,10,8,.34) 0 8%, transparent 9%),
+    radial-gradient(ellipse at 62% 46%, rgba(10,10,8,.34) 0 8%, transparent 9%),
+    radial-gradient(ellipse at 50% 58%, rgba(10,10,8,.3) 0 7%, transparent 8%),
+    radial-gradient(ellipse at 50% 73%, rgba(230,219,162,.22) 0 22%, transparent 23%);
+  opacity: .5;
+  box-shadow:
+    0 0 0 7px rgba(20,18,12,.38),
+    inset 0 0 12px rgba(234,222,166,.22);
+}
+
+.assign-token-face::after {
+  inset: 2%;
+  border: 5px dashed rgba(238,226,169,.45);
+  transform: rotate(12deg);
+  opacity: .75;
+}
+
+.assign-token.revealed .assign-token-face {
+  background: var(--team-bg, rgba(20,20,20,.9));
+  border: 4px solid var(--team-color, #2f5fbd);
+  filter: brightness(.72);
+  box-shadow: 0 2px 12px rgba(0,0,0,.55);
+}
+.assign-token.revealed .assign-token-face::before,
+.assign-token.revealed .assign-token-face::after { display: none; }
+
+.assign-token-face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.assign-token-number {
+  font-size: clamp(3.05rem, 9.5vw, 4.65rem);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 500;
+  line-height: 1;
+  color: #efe4b3;
+  text-shadow:
+    0 2px 0 rgba(10,9,6,.8),
+    1px 0 0 rgba(10,9,6,.55),
+    -1px 0 0 rgba(255,248,198,.24),
+    0 0 10px rgba(0,0,0,.45);
+  position: relative;
+  z-index: 1;
+  font-variant-numeric: oldstyle-nums;
+  transform: translateY(.04em);
+}
+
+.assign-player-name,
+.assign-char-name {
+  display: block;
+  max-width: 100%;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.assign-player-name {
+  color: #111;
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+.assign-char-name {
+  color: #6b3f08;
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+.assignment-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0,0,0,.18);
+}
+
+.assignment-progress {
+  color: #333;
+  font-size: .9rem;
+  font-weight: 700;
+}
+.assignment-progress.complete { color: #194d20; }
+
+.assignment-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem 1rem;
+}
+
+.assign-char-token {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 2px solid var(--team-color, var(--border-accent));
+  background: var(--team-bg, rgba(196,136,42,.1));
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+.assign-char-token img { width: 100%; height: 100%; object-fit: cover; }
+
+.assign-reveal-overlay {
+  background: rgba(0,0,0,.94);
+  backdrop-filter: blur(14px) brightness(.28);
+  padding: clamp(1rem, 4vw, 3rem);
+}
+
+.assign-reveal-modal {
+  width: min(760px, 96vw);
+  max-width: 760px;
+  min-height: min(620px, 86vh);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-width: 2px;
+  box-shadow: 0 22px 90px rgba(0,0,0,.95);
+}
+
+.assign-reveal-modal .modal-header {
+  padding: clamp(1rem, 3vw, 1.5rem) clamp(1rem, 4vw, 2rem);
+}
+
+.assign-reveal-modal .modal-body {
+  padding: clamp(1rem, 3vw, 1.5rem) clamp(1rem, 4vw, 2rem) clamp(1.25rem, 4vw, 2rem);
+}
+
+.assign-reveal-modal .assign-char-token {
+  width: clamp(92px, 18vw, 150px);
+  height: clamp(92px, 18vw, 150px);
+}
+
+.assign-reveal-modal .modal-header h3 {
+  font-size: clamp(1.45rem, 4vw, 2.3rem);
+}
+
+.assign-reveal-modal .badge {
+  font-size: .9rem;
+}
+
+.assign-ability {
+  color: var(--text-muted);
+  font-size: clamp(.95rem, 2vw, 1.1rem);
+  font-style: italic;
+  line-height: 1.55;
+  margin-bottom: 1.5rem;
+}
+.form-group { margin-bottom: .85rem; }
+.form-label {
+  display: block;
+  color: var(--text-muted);
+  font-size: .8rem;
+  margin-bottom: .3rem;
+}
+
+@media (max-width: 560px) {
+  .assignment-panel { padding: 1rem; }
+  .assignment-header { align-items: flex-start; }
+  .assignment-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .assign-token { min-height: 180px; }
+  .assignment-actions { justify-content: stretch; }
+  .assignment-actions .btn { width: 100%; justify-content: center; }
+}
+</style>

@@ -15,23 +15,23 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
         <h3 class="sidebar-title">Partida</h3>
         <button class="sidebar-btn" id="sb-add-player">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-          Afegeix Jugador
+          Afegeix jugador
         </button>
         <button class="sidebar-btn" id="sb-farols">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
-          Dimonis de Farol
+          Dimonis de farol
         </button>
         <button class="sidebar-btn" id="sb-qr">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zm8-2v8h8V3h-8zm6 6h-4V5h4v4zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm13-2h-2v2h2v-2zm2 0h-2v2h2v-2zm0 2h-2v2h2v-2zm-2 2h-2v2h2v-2zm0 2h-2v2h2v-2zm2-2h-2v2h2v-2zm0-4h-2v2h2v-2z"/></svg>
-          QR Jugadors
+          QR jugadors
         </button>
-        <a class="sidebar-btn" href="/ordre-de-nit">
+        <button class="sidebar-btn" id="sb-night-order">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.1 12.08c-2.33-4.51-.5-8.48.53-10.07C6.27 2.2 1.98 6.59 1.98 12c0 .14.02.28.02.42.62-.27 1.29-.42 2-.42 1.66 0 3.18.83 4.1 2.1A4.98 4.98 0 0 1 12 13c.08 0 .16.01.24.02C12.12 12.64 11.74 12.38 11.1 12.08z"/></svg>
-          Ordre de Nit
-        </a>
+          Ordre de nit
+        </button>
         <button class="sidebar-btn danger" id="sb-clear">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-          Nova Partida
+          Nova partida
         </button>
       </div>
       <div class="sidebar-section">
@@ -45,12 +45,54 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     </aside>
 
     <div class="grimoire-main">
+      <div class="game-clock-widget">
+        <div class="clock-widget-label">Cicle</div>
+        <div class="cycle-main">
+          <span id="cycle-icon" class="cycle-icon moon-icon" aria-hidden="true"></span>
+          <div id="cycle-display" class="cycle-display">Nit 1</div>
+        </div>
+        <div class="cycle-actions">
+          <button class="cycle-btn" id="cycle-prev" title="Fase anterior">−</button>
+          <button class="cycle-btn" id="cycle-next" title="Fase següent">+</button>
+        </div>
+      </div>
+
+      <div class="bell-timer-widget">
+        <div class="clock-tower" aria-hidden="true">
+          <div class="tower-storm"></div>
+          <div class="tower-spire"></div>
+          <div class="tower-roof"></div>
+          <div class="tower-crown"></div>
+          <div class="tower-clock"><span></span></div>
+          <div class="tower-body"></div>
+          <div class="tower-door"></div>
+        </div>
+        <div class="timer-controls">
+          <div id="timer-display" class="timer-display">05:00</div>
+          <div class="timer-row">
+            <input id="timer-minutes" class="timer-input" type="number" min="1" max="99" value="5" aria-label="Minuts del temporitzador" />
+            <button class="timer-btn" id="timer-toggle">Iniciar</button>
+            <button class="timer-btn timer-reset" id="timer-reset">↺</button>
+          </div>
+        </div>
+      </div>
+
       <div id="empty-state" class="empty-state" style="display:none">
         <div class="empty-state-icon">📖</div>
         <p>No hi ha cap partida activa.</p>
         <p style="font-size:.85rem;margin-top:.25rem">Afegeix jugadors o torna a la configuració.</p>
-        <a href="/" class="btn btn-primary" style="margin-top:1.5rem;text-decoration:none">Anar a Configuració</a>
+        <a href="/" class="btn btn-primary" style="margin-top:1.5rem;text-decoration:none">Anar a configuració</a>
       </div>
+      <aside id="night-order-panel" class="night-order-panel" style="display:none" aria-live="polite">
+        <div class="night-order-header">
+          <div>
+            <div class="night-order-kicker">Ordre de nit</div>
+            <h2 id="night-order-title">Primera nit</h2>
+          </div>
+          <button class="night-order-close" id="close-night-order" title="Tancar">✕</button>
+        </div>
+        <div id="night-order-list" class="night-order-list"></div>
+      </aside>
       <div id="grimoire-circle" class="grimoire-circle"></div>
     </div>
   </div>
@@ -72,10 +114,13 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
         <p id="modal-char-ability" style="color:var(--text-muted);font-size:.85rem;margin-bottom:1rem;font-style:italic"></p>
         <div class="modal-actions">
           <button class="modal-action-btn" id="btn-toggle-dead"></button>
+          <button class="modal-action-btn" id="btn-toggle-poisoned">Enverinat</button>
+          <button class="modal-action-btn" id="btn-toggle-drunk">Borratxo</button>
           <button class="modal-action-btn" id="btn-replace">Substituir</button>
           <button class="modal-action-btn" id="btn-add-reminder">Recordatori</button>
           <button class="modal-action-btn danger" id="btn-remove-player">Eliminar</button>
         </div>
+        <div id="status-display" class="status-display"></div>
         <div id="reminders-display" style="margin-top:1rem"></div>
       </div>
     </div>
@@ -85,11 +130,19 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   <div id="char-picker-modal" class="modal-overlay" style="display:none">
     <div class="modal" style="max-width:680px">
       <div class="modal-header">
-        <h3 id="picker-title">Selecciona Personatge</h3>
+        <h3 id="picker-title">Selecciona personatge</h3>
         <button class="modal-close btn" id="close-picker">✕</button>
       </div>
       <div class="modal-body">
         <input type="text" class="input" id="picker-search" placeholder="Cerca personatge..." style="margin-bottom:1rem" />
+        <div class="team-filter-bar" id="picker-team-filter">
+          <button class="team-filter-btn active" data-team="all">Tots</button>
+          <button class="team-filter-btn team-townsfolk" data-team="townsfolk">Vilatans</button>
+          <button class="team-filter-btn team-outsider" data-team="outsider">Forasters</button>
+          <button class="team-filter-btn team-traveller" data-team="traveller">Viatgers</button>
+          <button class="team-filter-btn team-minion" data-team="minion">Esbirros</button>
+          <button class="team-filter-btn team-demon" data-team="demon">Dimonis</button>
+        </div>
         <div id="char-picker-grid" class="char-picker-grid"></div>
       </div>
     </div>
@@ -99,7 +152,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   <div id="qr-modal" class="modal-overlay" style="display:none">
     <div class="modal" style="max-width:360px">
       <div class="modal-header">
-        <h3>QR Jugadors</h3>
+        <h3>QR jugadors</h3>
         <button class="modal-close btn" id="close-qr">✕</button>
       </div>
       <div class="modal-body" style="display:flex;flex-direction:column;align-items:center;gap:1rem">
@@ -114,7 +167,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   <div id="farols-modal" class="modal-overlay" style="display:none">
     <div class="modal" style="max-width:680px">
       <div class="modal-header">
-        <h3>🎭 Dimonis de Farol</h3>
+        <h3>🎭 Dimonis de farol</h3>
         <button class="modal-close btn" id="close-farols">✕</button>
       </div>
       <div class="modal-body">
@@ -122,6 +175,15 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
         <div id="farol-active-display"></div>
         <hr class="divider"/>
         <p style="color:var(--text-dim);font-size:.78rem;margin-bottom:.5rem">Canviar manualment:</p>
+        <input type="text" class="input" id="farols-search" placeholder="Cerca personatge..." style="margin-bottom:.75rem" />
+        <div class="team-filter-bar" id="farols-team-filter">
+          <button class="team-filter-btn active" data-team="all">Tots</button>
+          <button class="team-filter-btn team-townsfolk" data-team="townsfolk">Vilatans</button>
+          <button class="team-filter-btn team-outsider" data-team="outsider">Forasters</button>
+          <button class="team-filter-btn team-traveller" data-team="traveller">Viatgers</button>
+          <button class="team-filter-btn team-minion" data-team="minion">Esbirros</button>
+          <button class="team-filter-btn team-demon" data-team="demon">Dimonis</button>
+        </div>
         <div id="farols-grid" class="char-picker-grid"></div>
       </div>
     </div>
@@ -138,7 +200,18 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   const ABILITIES_CA = JSON.parse(document.getElementById('char-abilities-ca-data').textContent);
   function getNameCa(id, nameEn)     { return NAMES_CA[id]     ?? nameEn; }
   function getAbilityCa(id, abilityEn) { return ABILITIES_CA[id] ?? abilityEn; }
-  const TEAM_LABELS = {townsfolk:'Habitants',outsider:'Forasters',minion:'Servents',demon:'Dimonis',traveller:'Viatgers',fabled:'Llegendes'};
+  function shortPower(char) {
+    const text = getAbilityCa(char.id, char.ability || '').trim();
+    return text.length > 190 ? `${text.slice(0, 187).trim()}...` : text;
+  }
+  function powerTooltipAttr(char) {
+    const power = char ? shortPower(char) : '';
+    return power ? ` data-power="${escapeHtml(power)}"` : '';
+  }
+  function getNightReminderCa(char, reminderKey) {
+    return getAbilityCa(char.id, char.ability || char[reminderKey] || '');
+  }
+  const TEAM_LABELS = {townsfolk:'Vilatans',outsider:'Forasters',minion:'Esbirros',demon:'Dimonis',traveller:'Viatgers',fabled:'Llegendes'};
 
   let ALL_CHARS = [];
   try {
@@ -147,7 +220,13 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   } catch(e) { console.error('Error loading characters:', e); }
 
   let players = [], bluffs = [], notes = '', selectedSetupChars = [];
+  let gameCycle = { phase: 'night', day: 0, night: 1 };
+  let timerState = { seconds: 300, remaining: 300, running: false, interval: null, endsAt: null };
   let activeIdx = null, pickerMode = 'add';
+  let dragState = null, suppressNextClick = false;
+  let nightOrderOpen = false;
+  let pickerTeamFilter = 'all';
+  let farolsTeamFilter = 'all';
 
   function loadState() {
     try {
@@ -157,6 +236,12 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
       players = game.players || [];
       bluffs  = game.bluffs  || [];
       notes   = game.notes   || '';
+      gameCycle = game.cycle || gameCycle;
+      try {
+        const savedTimer = JSON.parse(localStorage.getItem('botc_timer') || '{}');
+        if (Number.isFinite(savedTimer.seconds)) timerState.seconds = savedTimer.seconds;
+        if (Number.isFinite(savedTimer.remaining)) timerState.remaining = savedTimer.remaining;
+      } catch(_) {}
       const custom = JSON.parse(localStorage.getItem('botc_custom_chars')||'[]');
       custom.forEach(c => { if(!ALL_CHARS.find(x=>x.id===c.id)) ALL_CHARS.push(c); });
       // Restore custom chars for players
@@ -167,7 +252,14 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   }
 
   function saveGame() {
-    localStorage.setItem('botc_game', JSON.stringify({players, bluffs, notes}));
+    localStorage.setItem('botc_game', JSON.stringify({players, bluffs, notes, cycle: gameCycle}));
+  }
+
+  function saveTimer() {
+    localStorage.setItem('botc_timer', JSON.stringify({
+      seconds: timerState.seconds,
+      remaining: timerState.remaining,
+    }));
   }
 
   function imgUrl(id) {
@@ -176,6 +268,255 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   }
 
   function charById(id) { return ALL_CHARS.find(c=>c.id===id); }
+
+  function escapeHtml(value = '') {
+    return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
+
+  function cycleIndex(cycle = gameCycle) {
+    return cycle.phase === 'night'
+      ? ((cycle.night || 1) - 1) * 2
+      : ((cycle.day || 1) - 1) * 2 + 1;
+  }
+
+  function isPoisoned(player) {
+    return Number.isFinite(player?.poisonedUntil) && cycleIndex() <= player.poisonedUntil;
+  }
+
+  function isDrunk(player) {
+    return !!player?.drunk;
+  }
+
+  function clearExpiredStatuses() {
+    let changed = false;
+    players.forEach(p => {
+      if (Number.isFinite(p.poisonedUntil) && cycleIndex() > p.poisonedUntil) {
+        delete p.poisonedUntil;
+        changed = true;
+      }
+    });
+    if (changed) saveGame();
+  }
+
+  function renderCycle() {
+    const display = document.getElementById('cycle-display');
+    if (!display) return;
+    display.textContent = gameCycle.phase === 'night'
+      ? `Nit ${gameCycle.night || 1}`
+      : `Dia ${gameCycle.day || 1}`;
+    display.classList.toggle('is-night', gameCycle.phase === 'night');
+    display.classList.toggle('is-day', gameCycle.phase === 'day');
+    const icon = document.getElementById('cycle-icon');
+    if (icon) icon.className = `cycle-icon ${gameCycle.phase === 'night' ? 'moon-icon' : 'sun-icon'}`;
+    renderNightOrderPanel();
+  }
+
+  function getNightOrderMode() {
+    return gameCycle.phase === 'night' && (gameCycle.night || 1) === 1 ? 'first' : 'other';
+  }
+
+  function getNightOrderChars(mode = getNightOrderMode()) {
+    const charIds = players.map(p => p.charId).filter(Boolean);
+    const seen = new Set();
+    const chars = charIds
+      .map(id => charById(id))
+      .filter(Boolean)
+      .filter(c => {
+        if (seen.has(c.id)) return false;
+        seen.add(c.id);
+        return true;
+      });
+    const orderKey = mode === 'first' ? 'firstNight' : 'otherNight';
+    return chars.filter(c => c[orderKey] > 0).sort((a, b) => a[orderKey] - b[orderKey]);
+  }
+
+  function getNightOrderNumber(charId) {
+    if (!nightOrderOpen || !charId) return null;
+    const idx = getNightOrderChars().findIndex(c => c.id === charId);
+    return idx >= 0 ? idx + 1 : null;
+  }
+
+  function renderNightOrderPanel() {
+    const panel = document.getElementById('night-order-panel');
+    if (!panel) return;
+    panel.style.display = nightOrderOpen ? '' : 'none';
+    document.getElementById('sb-night-order')?.classList.toggle('active', nightOrderOpen);
+    if (!nightOrderOpen) return;
+
+    const mode = getNightOrderMode();
+    const title = mode === 'first' ? 'Primera nit' : 'Altres nits';
+    const titleEl = document.getElementById('night-order-title');
+    const listEl = document.getElementById('night-order-list');
+    if (titleEl) titleEl.textContent = title;
+    if (!listEl) return;
+
+    const chars = getNightOrderChars(mode);
+    const reminderKey = mode === 'first' ? 'firstNightReminder' : 'otherNightReminder';
+    const systemRows = mode === 'first'
+      ? [
+          { label:'ESBIRROS', text:'El Narrador desperta els Esbirros i els mostra els altres Esbirros i qui és el Dimoni.' },
+          { label:'DIMONI', text:'El Narrador desperta el Dimoni i li mostra els seus Esbirros i 3 personatges que no estan en joc.' },
+        ]
+      : [
+          { label:'CREPUSCLE', text:'Preparació: recordatoris, Viatgers i Fabulosos.' },
+        ];
+    const charRows = chars.map((c, i) => {
+      const url = imgUrl(c.id);
+      return `<div class="night-order-row team-${c.team}">
+        <div class="night-order-num">${i + 1}</div>
+        <div class="night-order-token team-${c.team}">
+          ${url ? `<img src="${url}" alt="${escapeHtml(getNameCa(c.id, c.name))}" onerror="this.style.display='none'" loading="lazy"/>` : `<span>${escapeHtml(getNameCa(c.id, c.name)[0] || '?')}</span>`}
+        </div>
+        <div class="night-order-content">
+          <div class="night-order-name">${escapeHtml(getNameCa(c.id, c.name))}</div>
+          <div class="night-order-reminder">${escapeHtml(getNightReminderCa(c, reminderKey) || '—')}</div>
+        </div>
+      </div>`;
+    }).join('');
+    const dawnRow = mode === 'other' && chars.length
+      ? `<div class="night-order-row system-row">
+          <div class="night-order-num">—</div>
+          <div class="night-order-content">
+            <div class="night-order-name system-label">ALBA</div>
+            <div class="night-order-reminder">Tothom s'aixeca. Algú pot morir.</div>
+          </div>
+        </div>`
+      : '';
+    listEl.innerHTML = `${systemRows.map(row => `<div class="night-order-row system-row">
+        <div class="night-order-num">—</div>
+        <div class="night-order-content">
+          <div class="night-order-name system-label">${row.label}</div>
+          <div class="night-order-reminder">${row.text}</div>
+        </div>
+      </div>`).join('')}${charRows || '<p class="night-order-empty">Cap personatge actiu en aquesta fase.</p>'}${dawnRow}`;
+  }
+
+  function toggleNightOrderPanel() {
+    nightOrderOpen = !nightOrderOpen;
+    renderNightOrderPanel();
+    renderCircle();
+  }
+
+  function advanceCycle(step) {
+    if (step > 0) {
+      if (gameCycle.phase === 'night') {
+        gameCycle.phase = 'day';
+        gameCycle.day = Math.max(gameCycle.day || 0, gameCycle.night || 1);
+      } else {
+        gameCycle.phase = 'night';
+        gameCycle.night = (gameCycle.night || 1) + 1;
+      }
+    } else if (gameCycle.phase === 'day') {
+      gameCycle.phase = 'night';
+      gameCycle.night = Math.max(1, gameCycle.day || 1);
+    } else if ((gameCycle.night || 1) > 1) {
+      gameCycle.phase = 'day';
+      gameCycle.day = (gameCycle.night || 1) - 1;
+    }
+    clearExpiredStatuses();
+    saveGame();
+    renderCycle();
+    renderCircle();
+  }
+
+  function formatTimer(seconds) {
+    const s = Math.max(0, Math.floor(seconds));
+    return `${String(Math.floor(s / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
+  }
+
+  function renderTimer() {
+    const display = document.getElementById('timer-display');
+    const toggle = document.getElementById('timer-toggle');
+    const input = document.getElementById('timer-minutes');
+    if (!display || !toggle || !input) return;
+    display.textContent = formatTimer(timerState.remaining);
+    display.classList.toggle('timer-done', timerState.remaining <= 0);
+    toggle.textContent = timerState.running ? 'Pausar' : 'Iniciar';
+    input.disabled = timerState.running;
+    input.value = String(Math.max(1, Math.round(timerState.seconds / 60)));
+  }
+
+  function setTimerFromInput() {
+    const minutes = Math.max(1, Math.min(99, +(document.getElementById('timer-minutes')?.value || 5)));
+    timerState.seconds = minutes * 60;
+    timerState.remaining = timerState.seconds;
+    saveTimer();
+    renderTimer();
+  }
+
+  function toggleTimer() {
+    if (timerState.running) { pauseTimer(); return; }
+    if (timerState.remaining <= 0) setTimerFromInput();
+    timerState.running = true;
+    timerState.endsAt = Date.now() + timerState.remaining * 1000;
+    timerState.interval = window.setInterval(tickTimer, 250);
+    renderTimer();
+  }
+
+  function pauseTimer() {
+    timerState.running = false;
+    if (timerState.interval) window.clearInterval(timerState.interval);
+    timerState.interval = null;
+    saveTimer();
+    renderTimer();
+  }
+
+  function resetTimer() {
+    pauseTimer();
+    setTimerFromInput();
+  }
+
+  function tickTimer() {
+    timerState.remaining = Math.max(0, Math.ceil((timerState.endsAt - Date.now()) / 1000));
+    if (timerState.remaining <= 0) {
+      pauseTimer();
+      timerState.remaining = 0;
+      saveTimer();
+      renderTimer();
+      ringBell();
+      return;
+    }
+    renderTimer();
+  }
+
+  function ringBell() {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const master = ctx.createGain();
+    master.gain.value = 0.72;
+    master.connect(ctx.destination);
+    const strike = delay => {
+      const start = ctx.currentTime + delay;
+      const bellGain = ctx.createGain();
+      bellGain.gain.setValueAtTime(0.0001, start);
+      bellGain.gain.exponentialRampToValueAtTime(0.75, start + 0.025);
+      bellGain.gain.exponentialRampToValueAtTime(0.0001, start + 5.8);
+      bellGain.connect(master);
+      [82, 123, 164, 247, 330, 494].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        osc.type = i < 2 ? 'sine' : 'triangle';
+        osc.frequency.setValueAtTime(freq, start);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.985, start + 1.2);
+        osc.detune.setValueAtTime((i - 2) * 5, start);
+        osc.connect(bellGain);
+        osc.start(start);
+        osc.stop(start + 5.9);
+      });
+      const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 0.18, ctx.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+      const noise = ctx.createBufferSource();
+      const noiseGain = ctx.createGain();
+      noise.buffer = noiseBuffer;
+      noiseGain.gain.setValueAtTime(0.12, start);
+      noiseGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.2);
+      noise.connect(noiseGain);
+      noiseGain.connect(master);
+      noise.start(start);
+    };
+    strike(0); strike(1.35); strike(2.7); strike(4.05);
+  }
 
   // Circle
   function renderCircle() {
@@ -187,15 +528,25 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     circle.innerHTML = `<div class="tokens-ring">${players.map((p,i) => {
       const char = p.charId ? charById(p.charId) : null;
       const url = char ? imgUrl(char.id) : null;
-      return `<div class="circle-token team-${char?.team||'townsfolk'} ${p.dead?'dead':''}" data-idx="${i}" style="position:absolute">
-        ${url ? `<img src="${url}" alt="${char.name}" onerror="this.style.display='none'" loading="lazy"/>` : `<span class="token-placeholder">${i+1}</span>`}
+      const nightOrderNum = getNightOrderNumber(p.charId);
+      return `<div class="circle-token has-power-tooltip team-${char?.team||'townsfolk'} ${p.dead?'dead':''}" data-idx="${i}"${char ? powerTooltipAttr(char) : ''} style="position:absolute">
+        ${url ? `<img src="${url}" alt="${getNameCa(char.id, char.name)}" onerror="this.style.display='none'" loading="lazy"/>` : `<span class="token-placeholder">${i+1}</span>`}
+        ${nightOrderNum ? `<div class="night-order-marker">${nightOrderNum}</div>` : ''}
         ${p.dead ? '<div class="dead-shroud">†</div>' : ''}
+        <div class="token-status-tags">
+          ${isPoisoned(p) ? '<span class="token-status poisoned">Enverinat</span>' : ''}
+          ${isDrunk(p) ? '<span class="token-status drunk">Borratxo</span>' : ''}
+        </div>
         <div class="token-label">${p.name||`J${i+1}`}</div>
         ${char ? `<div class="token-char-name">${getNameCa(char.id, char.name)}</div>` : ''}
       </div>`;
     }).join('')}</div>`;
     circle.querySelectorAll('.circle-token').forEach(el => {
-      el.addEventListener('click', () => openTokenModal(+el.dataset.idx));
+      el.addEventListener('pointerdown', startTokenDrag);
+      el.addEventListener('click', () => {
+        if (suppressNextClick) return;
+        openTokenModal(+el.dataset.idx);
+      });
     });
     positionTokens();
     renderPlayerList();
@@ -211,10 +562,76 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     const r = Math.min(cx,cy)*0.78;
     const tokenW = 80;
     items.forEach((el,i) => {
-      const angle = (2*Math.PI*i/N) - Math.PI/2;
-      el.style.left = `${cx + r*Math.cos(angle) - tokenW/2}px`;
-      el.style.top  = `${cy + r*Math.sin(angle) - tokenW/2}px`;
+      const p = players[i];
+      let centerX, centerY;
+      if (Number.isFinite(p?.posX) && Number.isFinite(p?.posY)) {
+        centerX = p.posX * W;
+        centerY = p.posY * H;
+      } else {
+        const angle = (2*Math.PI*i/N) - Math.PI/2;
+        centerX = cx + r*Math.cos(angle);
+        centerY = cy + r*Math.sin(angle);
+      }
+      el.style.left = `${Math.max(0, Math.min(W-tokenW, centerX - tokenW/2))}px`;
+      el.style.top  = `${Math.max(0, Math.min(H-tokenW, centerY - tokenW/2))}px`;
     });
+  }
+
+  function startTokenDrag(e) {
+    if (e.button !== undefined && e.button !== 0) return;
+    e.preventDefault();
+    const el = e.currentTarget;
+    const ring = document.querySelector('.tokens-ring');
+    if (!ring) return;
+    const idx = +el.dataset.idx;
+    const ringRect = ring.getBoundingClientRect();
+    const tokenRect = el.getBoundingClientRect();
+    dragState = {
+      el, ring, idx, ringRect,
+      startX: e.clientX,
+      startY: e.clientY,
+      offsetX: e.clientX - tokenRect.left,
+      offsetY: e.clientY - tokenRect.top,
+      moved: false,
+    };
+    el.classList.add('dragging');
+    el.setPointerCapture?.(e.pointerId);
+    window.addEventListener('pointermove', dragToken);
+    window.addEventListener('pointerup', endTokenDrag, { once: true });
+  }
+
+  function dragToken(e) {
+    if (!dragState) return;
+    e.preventDefault();
+    const { el, ringRect, offsetX, offsetY, startX, startY } = dragState;
+    const tokenW = el.offsetWidth || 80;
+    const tokenH = el.offsetHeight || 80;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (Math.hypot(dx, dy) > 4) dragState.moved = true;
+    const left = Math.max(0, Math.min(ringRect.width - tokenW, e.clientX - ringRect.left - offsetX));
+    const top = Math.max(0, Math.min(ringRect.height - tokenH, e.clientY - ringRect.top - offsetY));
+    el.style.left = `${left}px`;
+    el.style.top = `${top}px`;
+  }
+
+  function endTokenDrag() {
+    if (!dragState) return;
+    window.removeEventListener('pointermove', dragToken);
+    const { el, ringRect, idx, moved } = dragState;
+    el.classList.remove('dragging');
+    if (moved) {
+      const tokenW = el.offsetWidth || 80;
+      const tokenH = el.offsetHeight || 80;
+      const left = parseFloat(el.style.left) || 0;
+      const top = parseFloat(el.style.top) || 0;
+      players[idx].posX = (left + tokenW / 2) / ringRect.width;
+      players[idx].posY = (top + tokenH / 2) / ringRect.height;
+      saveGame();
+      suppressNextClick = true;
+      setTimeout(() => { suppressNextClick = false; }, 160);
+    }
+    dragState = null;
   }
 
   function renderPlayerList() {
@@ -226,11 +643,12 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
       const url = char ? imgUrl(char.id) : null;
       return `<div class="player-item ${p.dead?'dead':''}" data-idx="${i}">
         <div class="player-token-sm team-${char?.team||'townsfolk'}">
-          ${url ? `<img src="${url}" alt="${char.name}" onerror="this.style.display='none'" loading="lazy"/>` : `<span>${i+1}</span>`}
+          ${url ? `<img src="${url}" alt="${getNameCa(char.id, char.name)}" onerror="this.style.display='none'" loading="lazy"/>` : `<span>${i+1}</span>`}
         </div>
         <div class="player-info">
           <span class="player-name">${p.name||`Jugador ${i+1}`}</span>
           ${char ? `<span class="player-char">${getNameCa(char.id, char.name)}</span>` : ''}
+          ${(isPoisoned(p) || isDrunk(p)) ? `<span class="player-status-line">${isPoisoned(p)?'Enverinat':''}${isPoisoned(p)&&isDrunk(p)?' · ':''}${isDrunk(p)?'Borratxo':''}</span>` : ''}
         </div>
         ${p.dead ? '<span class="dead-badge">†</span>' : ''}
       </div>`;
@@ -251,12 +669,28 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     teamEl.textContent = char ? (TEAM_LABELS[char.team]||char.team) : '';
     teamEl.className = `badge team-${char?.team||'townsfolk'}`;
     document.getElementById('btn-toggle-dead').textContent = p.dead ? 'Revifar' : 'Emmortallar';
+    renderStatusControls(p);
     const img = document.getElementById('modal-token-img');
     img.className = `modal-token team-${char?.team||'townsfolk'}`;
     const url = char ? imgUrl(char.id) : null;
-    img.innerHTML = url ? `<img src="${url}" alt="${char.name}" onerror="this.style.display='none'" loading="lazy"/>` : `<span>${idx+1}</span>`;
+    img.innerHTML = url ? `<img src="${url}" alt="${getNameCa(char.id, char.name)}" onerror="this.style.display='none'" loading="lazy"/>` : `<span>${idx+1}</span>`;
     renderReminders(p);
     document.getElementById('token-modal').style.display = '';
+  }
+
+  function renderStatusControls(p) {
+    const poisoned = isPoisoned(p);
+    const drunk = isDrunk(p);
+    const poisonedBtn = document.getElementById('btn-toggle-poisoned');
+    const drunkBtn = document.getElementById('btn-toggle-drunk');
+    poisonedBtn.classList.toggle('active-status', poisoned);
+    drunkBtn.classList.toggle('active-status', drunk);
+    poisonedBtn.textContent = poisoned ? 'Treure enverinat' : 'Enverinat';
+    drunkBtn.textContent = drunk ? 'Treure borratxo' : 'Borratxo';
+    const statuses = [];
+    if (poisoned) statuses.push('<span class="status-tag poisoned">Enverinat fins al proper dia</span>');
+    if (drunk) statuses.push('<span class="status-tag drunk">Borratxo</span>');
+    document.getElementById('status-display').innerHTML = statuses.join('');
   }
 
   function renderReminders(p) {
@@ -284,6 +718,25 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     saveGame(); renderCircle();
   });
 
+  document.getElementById('btn-toggle-poisoned').addEventListener('click', () => {
+    if (activeIdx===null) return;
+    const p = players[activeIdx];
+    if (isPoisoned(p)) delete p.poisonedUntil;
+    else p.poisonedUntil = gameCycle.phase === 'night' ? cycleIndex() + 1 : cycleIndex();
+    saveGame();
+    renderStatusControls(p);
+    renderCircle();
+  });
+
+  document.getElementById('btn-toggle-drunk').addEventListener('click', () => {
+    if (activeIdx===null) return;
+    const p = players[activeIdx];
+    p.drunk = !p.drunk;
+    saveGame();
+    renderStatusControls(p);
+    renderCircle();
+  });
+
   document.getElementById('btn-remove-player').addEventListener('click', () => {
     if (activeIdx===null) return;
     players.splice(activeIdx,1);
@@ -307,8 +760,10 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 
   document.getElementById('btn-replace').addEventListener('click', () => {
     pickerMode='replace';
-    document.getElementById('picker-title').textContent='Substituir Personatge';
+    document.getElementById('picker-title').textContent='Substituir personatge';
     document.getElementById('picker-search').value='';
+    pickerTeamFilter = 'all';
+    syncTeamFilter('picker-team-filter', pickerTeamFilter);
     renderPickerGrid('');
     document.getElementById('char-picker-modal').style.display='';
     document.getElementById('token-modal').style.display='none';
@@ -317,26 +772,37 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   // Character picker
   document.getElementById('sb-add-player').addEventListener('click', () => {
     pickerMode='add';
-    document.getElementById('picker-title').textContent='Afegeix Jugador';
+    document.getElementById('picker-title').textContent='Afegeix jugador';
     document.getElementById('picker-search').value='';
+    pickerTeamFilter = 'all';
+    syncTeamFilter('picker-team-filter', pickerTeamFilter);
     renderPickerGrid('');
     document.getElementById('char-picker-modal').style.display='';
   });
   document.getElementById('close-picker').addEventListener('click', () => { document.getElementById('char-picker-modal').style.display='none'; });
   document.getElementById('char-picker-modal').addEventListener('click', e => { if(e.target===e.currentTarget) e.currentTarget.style.display='none'; });
   document.getElementById('picker-search').addEventListener('input', e => renderPickerGrid(e.target.value.toLowerCase()));
+  document.querySelectorAll('#picker-team-filter .team-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      pickerTeamFilter = btn.dataset.team;
+      syncTeamFilter('picker-team-filter', pickerTeamFilter);
+      renderPickerGrid(document.getElementById('picker-search').value.toLowerCase());
+    });
+  });
 
   function renderPickerGrid(q) {
     const inUse = new Set(players.map(p=>p.charId).filter(Boolean));
     let chars = selectedSetupChars.length ? ALL_CHARS.filter(c=>selectedSetupChars.includes(c.id)) : ALL_CHARS.filter(c=>['tb','bmr','snv'].includes(c.edition)||c.id.startsWith('custom_'));
+    if (pickerTeamFilter !== 'all') chars = chars.filter(c=>c.team === pickerTeamFilter);
     if (q) chars = chars.filter(c=>c.name.toLowerCase().includes(q) || getNameCa(c.id, c.name).toLowerCase().includes(q));
     const grid = document.getElementById('char-picker-grid');
     if (!chars.length) { grid.innerHTML='<p style="color:var(--text-muted);text-align:center;padding:2rem">Cap resultat.</p>'; return; }
     grid.innerHTML = chars.map(c => {
       const url = imgUrl(c.id);
-      return `<button class="picker-char ${inUse.has(c.id)?'in-use':''} team-${c.team}" data-id="${c.id}" title="${c.ability||''}">
-        <div class="picker-img team-${c.team}">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${getNameCa(c.id, c.name)[0]}</span>`}</div>
-        <span>${getNameCa(c.id, c.name)}</span>
+      const name = getNameCa(c.id, c.name);
+      return `<button class="picker-char has-power-tooltip ${inUse.has(c.id)?'in-use':''} team-${c.team}" data-id="${c.id}"${powerTooltipAttr(c)}>
+        <div class="picker-img team-${c.team}">${url?`<img src="${url}" alt="${name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${name[0]}</span>`}</div>
+        <span>${name}</span>
         ${inUse.has(c.id)?'<span class="in-use-badge">·</span>':''}
       </button>`;
     }).join('');
@@ -356,11 +822,28 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 
   // Dimonis de farol
   document.getElementById('sb-farols').addEventListener('click', () => {
+    document.getElementById('farols-search').value = '';
+    farolsTeamFilter = 'all';
+    syncTeamFilter('farols-team-filter', farolsTeamFilter);
     renderFarolsModal();
     document.getElementById('farols-modal').style.display='';
   });
   document.getElementById('close-farols').addEventListener('click', () => { document.getElementById('farols-modal').style.display='none'; });
   document.getElementById('farols-modal').addEventListener('click', e => { if(e.target===e.currentTarget) e.currentTarget.style.display='none'; });
+  document.getElementById('farols-search').addEventListener('input', renderFarolsModal);
+  document.querySelectorAll('#farols-team-filter .team-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      farolsTeamFilter = btn.dataset.team;
+      syncTeamFilter('farols-team-filter', farolsTeamFilter);
+      renderFarolsModal();
+    });
+  });
+
+  function syncTeamFilter(filterId, activeTeam) {
+    document.querySelectorAll(`#${filterId} .team-filter-btn`).forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.team === activeTeam);
+    });
+  }
 
   function renderFarolsModal() {
     const activeEl = document.getElementById('farol-active-display');
@@ -368,9 +851,10 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
       const farolChars = bluffs.map(id=>charById(id)).filter(Boolean);
       activeEl.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:.75rem;margin-bottom:.5rem">${farolChars.map(c => {
         const url = imgUrl(c.id);
+        const name = getNameCa(c.id, c.name);
         return `<div style="display:flex;flex-direction:column;align-items:center;gap:.3rem">
-          <div class="picker-img team-${c.team}" style="width:52px;height:52px">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${getNameCa(c.id, c.name)[0]}</span>`}</div>
-          <span style="font-size:.7rem;color:var(--accent)">${getNameCa(c.id, c.name)}</span>
+          <div class="picker-img team-${c.team}" style="width:52px;height:52px">${url?`<img src="${url}" alt="${name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${name[0]}</span>`}</div>
+          <span style="font-size:.7rem;color:var(--accent)">${name}</span>
         </div>`;
       }).join('')}</div>`;
     } else {
@@ -379,12 +863,16 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     const inUse = new Set(players.map(p=>p.charId).filter(Boolean));
     let chars = selectedSetupChars.length ? ALL_CHARS.filter(c=>selectedSetupChars.includes(c.id)) : ALL_CHARS.filter(c=>['tb','bmr','snv'].includes(c.edition)||c.id.startsWith('custom_'));
     chars = chars.filter(c=>!inUse.has(c.id));
+    if (farolsTeamFilter !== 'all') chars = chars.filter(c=>c.team === farolsTeamFilter);
+    const q = (document.getElementById('farols-search')?.value || '').trim().toLowerCase();
+    if (q) chars = chars.filter(c=>c.name.toLowerCase().includes(q) || getNameCa(c.id, c.name).toLowerCase().includes(q));
     const grid = document.getElementById('farols-grid');
     grid.innerHTML = chars.map(c => {
       const url = imgUrl(c.id);
-      return `<button class="picker-char ${bluffs.includes(c.id)?'bluff-selected':''} team-${c.team}" data-id="${c.id}" title="${c.ability||''}">
-        <div class="picker-img team-${c.team}">${url?`<img src="${url}" alt="${c.name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${getNameCa(c.id, c.name)[0]}</span>`}</div>
-        <span>${getNameCa(c.id, c.name)}</span>
+      const name = getNameCa(c.id, c.name);
+      return `<button class="picker-char has-power-tooltip ${bluffs.includes(c.id)?'bluff-selected':''} team-${c.team}" data-id="${c.id}"${powerTooltipAttr(c)}>
+        <div class="picker-img team-${c.team}">${url?`<img src="${url}" alt="${name}" onerror="this.style.display='none'" loading="lazy"/>`:`<span>${name[0]}</span>`}</div>
+        <span>${name}</span>
         ${bluffs.includes(c.id)?'<span class="bluff-badge">🎭</span>':''}
       </button>`;
     }).join('');
@@ -429,8 +917,22 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   document.getElementById('close-qr').addEventListener('click', () => { document.getElementById('qr-modal').style.display='none'; });
   document.getElementById('qr-modal').addEventListener('click', e => { if(e.target===e.currentTarget) e.currentTarget.style.display='none'; });
 
+  // Ordre de Nit
+  document.getElementById('sb-night-order').addEventListener('click', toggleNightOrderPanel);
+  document.getElementById('close-night-order').addEventListener('click', () => {
+    nightOrderOpen = false;
+    renderNightOrderPanel();
+    renderCircle();
+  });
+
   // Notes
   document.getElementById('notes-area').addEventListener('input', e => { notes=e.target.value; saveGame(); });
+
+  document.getElementById('cycle-prev').addEventListener('click', () => advanceCycle(-1));
+  document.getElementById('cycle-next').addEventListener('click', () => advanceCycle(1));
+  document.getElementById('timer-minutes').addEventListener('change', setTimerFromInput);
+  document.getElementById('timer-toggle').addEventListener('click', toggleTimer);
+  document.getElementById('timer-reset').addEventListener('click', resetTimer);
 
   // Clear
   document.getElementById('sb-clear').addEventListener('click', () => {
@@ -443,6 +945,9 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 
   // Init
   loadState();
+  clearExpiredStatuses();
+  renderCycle();
+  renderTimer();
   renderCircle();
   document.getElementById('notes-area').value = notes;
 })();
@@ -455,6 +960,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 .sidebar-title { font-size:.7rem; font-family:var(--font-sans); text-transform:uppercase; letter-spacing:.1em; color:var(--text-dim); margin-bottom:.5rem; }
 .sidebar-btn { display:flex; align-items:center; gap:.5rem; width:100%; padding:.45rem .6rem; border-radius:6px; font-size:.82rem; color:var(--text-muted); background:transparent; border:1px solid transparent; cursor:pointer; transition:all .15s; text-align:left; margin-bottom:.25rem; text-decoration:none; }
 .sidebar-btn:hover { color:var(--text); background:var(--bg-hover); border-color:var(--border); }
+.sidebar-btn.active { color:var(--accent); background:rgba(196,136,42,.11); border-color:var(--border-accent); }
 .sidebar-btn.danger { color:var(--red-light); }
 .sidebar-btn.danger:hover { background:rgba(139,26,26,.15); border-color:var(--red); }
 .player-list { display:flex; flex-direction:column; gap:.35rem; }
@@ -466,30 +972,455 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 .player-info { display:flex; flex-direction:column; min-width:0; flex:1; }
 .player-name { font-size:.8rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .player-char { font-size:.7rem; color:var(--text-muted); }
+.player-status-line { font-size:.64rem; color:#a870e8; }
 .dead-badge { color:var(--text-dim); font-size:.9rem; }
 .notes-input { width:100%; min-height:100px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); font-size:.8rem; font-family:inherit; padding:.5rem; resize:vertical; }
 .notes-input:focus { outline:none; border-color:var(--accent-dark); }
 .notes-input::placeholder { color:var(--text-dim); }
-.grimoire-main { flex:1; overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center; }
-.grimoire-circle { width:100%; height:100%; position:relative; }
+.grimoire-main { flex:1; overflow:hidden; position:relative; display:flex; flex-direction:column; align-items:stretch; justify-content:center; }
+.game-clock-widget,
+.bell-timer-widget {
+  position:absolute;
+  top:1rem;
+  z-index:30;
+  background:rgba(10,5,5,.84);
+  border:1px solid var(--border-accent);
+  border-radius:var(--radius);
+  box-shadow:0 6px 18px rgba(0,0,0,.45);
+  backdrop-filter:blur(6px);
+}
+.game-clock-widget {
+  left:1rem;
+  min-width:130px;
+  padding:.65rem .75rem;
+}
+.clock-widget-label {
+  font-size:.62rem;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  color:var(--text-dim);
+  margin-bottom:.2rem;
+}
+.cycle-main { display:flex; align-items:center; gap:.55rem; }
+.cycle-icon {
+  width:34px;
+  height:34px;
+  flex-shrink:0;
+  position:relative;
+  display:inline-block;
+}
+.moon-icon {
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 62% 32%, rgba(98,98,98,.38) 0 5%, transparent 6%),
+    radial-gradient(circle at 38% 58%, rgba(70,70,70,.28) 0 8%, transparent 9%),
+    radial-gradient(circle at 50% 50%, #f7f7ef 0 55%, #b7b7b0 78%, #777874 100%);
+  box-shadow:0 0 13px rgba(255,255,255,.45);
+  overflow:hidden;
+}
+.moon-icon::before,
+.moon-icon::after { display:none; }
+.sun-icon {
+  border-radius:50%;
+  background:
+    radial-gradient(circle, #fff8a8 0 38%, #f7b12c 62%, #d85a16 100%);
+  box-shadow:0 0 16px rgba(244,139,26,.7);
+}
+.sun-icon::before {
+  content:'';
+  position:absolute;
+  inset:-7px;
+  background:repeating-conic-gradient(from 3deg, #f08f18 0deg 7deg, transparent 7deg 16deg);
+  border-radius:50%;
+  z-index:-1;
+  filter:drop-shadow(0 0 4px rgba(255,125,22,.45));
+}
+.sun-icon::after { display:none; }
+.cycle-display {
+  font-family:var(--font-serif);
+  font-size:1.2rem;
+  color:var(--accent);
+  line-height:1.1;
+}
+.cycle-display.is-day { color:#d4a030; }
+.cycle-display.is-night { color:#7aa2e8; }
+.cycle-actions { display:flex; gap:.35rem; margin-top:.45rem; }
+.cycle-btn,
+.timer-btn {
+  min-width:30px;
+  height:28px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid var(--border);
+  border-radius:6px;
+  color:var(--text-muted);
+  background:var(--bg);
+  font-size:.8rem;
+  transition:all .15s;
+}
+.cycle-btn:hover,
+.timer-btn:hover {
+  color:var(--accent);
+  border-color:var(--border-accent);
+  background:var(--bg-hover);
+}
+.bell-timer-widget {
+  right:1rem;
+  display:flex;
+  align-items:center;
+  gap:.5rem;
+  padding:.45rem .55rem;
+}
+.clock-tower {
+  width:54px;
+  height:88px;
+  flex-shrink:0;
+  position:relative;
+  border-radius:4px;
+  overflow:hidden;
+  background:
+    linear-gradient(135deg, transparent 0 38%, rgba(175,225,255,.48) 39% 41%, transparent 42% 100%),
+    radial-gradient(ellipse at 50% 25%, rgba(70,103,112,.45), transparent 55%),
+    linear-gradient(180deg, #16272c, #061014 68%, #030707);
+  box-shadow:inset 0 -20px 28px rgba(0,0,0,.65), 0 4px 13px rgba(0,0,0,.65);
+}
+.tower-storm {
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(112deg, transparent 0 55%, rgba(211,245,255,.65) 56% 58%, transparent 59%),
+    linear-gradient(124deg, transparent 0 34%, rgba(211,245,255,.45) 35% 37%, transparent 38%);
+  opacity:.7;
+}
+.tower-spire {
+  position:absolute;
+  left:24px;
+  top:2px;
+  width:7px;
+  height:22px;
+  background:#05090b;
+  clip-path:polygon(50% 0,100% 100%,0 100%);
+  z-index:2;
+}
+.tower-roof {
+  position:absolute;
+  left:15px;
+  top:15px;
+  width:24px;
+  height:22px;
+  background:linear-gradient(110deg,#10191c,#020405);
+  clip-path:polygon(50% 0,100% 100%,0 100%);
+  z-index:2;
+}
+.tower-crown {
+  position:absolute;
+  left:10px;
+  top:34px;
+  width:34px;
+  height:11px;
+  border:1px solid rgba(146,116,63,.55);
+  background:#071014;
+  z-index:3;
+}
+.tower-clock {
+  position:absolute;
+  left:14px;
+  top:42px;
+  width:27px;
+  height:27px;
+  border-radius:50%;
+  border:2px solid rgba(221,220,196,.9);
+  background:radial-gradient(circle, #e9eadb 0 54%, #141a1b 57% 100%);
+  z-index:4;
+  box-shadow:0 0 8px rgba(220,240,225,.45);
+}
+.tower-clock::before,
+.tower-clock::after {
+  content:'';
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:2px;
+  background:#080909;
+  transform-origin:bottom center;
+}
+.tower-clock::before { height:8px; transform:translate(-50%,-100%) rotate(305deg); }
+.tower-clock::after { height:7px; transform:translate(-50%,-100%) rotate(84deg); }
+.tower-body {
+  position:absolute;
+  left:15px;
+  top:68px;
+  width:25px;
+  height:20px;
+  background:linear-gradient(90deg,#05090b,#142329 45%,#05090b);
+  border-left:1px solid rgba(146,116,63,.36);
+  border-right:1px solid rgba(146,116,63,.36);
+}
+.tower-body::before {
+  content:'';
+  position:absolute;
+  inset:3px 7px;
+  background:repeating-linear-gradient(90deg, rgba(218,157,67,.35) 0 2px, transparent 2px 6px);
+  opacity:.55;
+}
+.tower-door {
+  position:absolute;
+  left:20px;
+  bottom:2px;
+  width:15px;
+  height:14px;
+  border-radius:10px 10px 0 0;
+  background:radial-gradient(ellipse at 50% 20%, rgba(255,143,54,.9), rgba(48,20,8,.82) 70%);
+  z-index:5;
+}
+.timer-controls { min-width:106px; }
+.timer-display {
+  font-family:var(--font-serif);
+  font-size:1.08rem;
+  color:var(--accent);
+  line-height:1;
+  margin-bottom:.35rem;
+}
+.timer-display.timer-done { color:var(--red-light); }
+.timer-row { display:flex; gap:.28rem; align-items:center; }
+.timer-input {
+  width:40px;
+  height:26px;
+  border-radius:6px;
+  border:1px solid var(--border);
+  background:var(--bg);
+  color:var(--text);
+  text-align:center;
+  font-size:.75rem;
+}
+.timer-input:focus { outline:none; border-color:var(--accent-dark); }
+.timer-reset { width:30px; padding:0; }
+.night-order-panel {
+  order:2;
+  flex-shrink:0;
+  width:calc(100% - 2rem);
+  max-height:30vh;
+  margin:0 1rem 1rem;
+  z-index:28;
+  background:rgba(10,5,5,.92);
+  border:1px solid var(--border-accent);
+  border-radius:var(--radius);
+  box-shadow:0 12px 28px rgba(0,0,0,.55);
+  overflow:hidden;
+  backdrop-filter:blur(8px);
+}
+.night-order-header {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:1rem;
+  padding:.8rem .9rem;
+  border-bottom:1px solid var(--border);
+  background:rgba(196,136,42,.06);
+}
+.night-order-kicker {
+  font-size:.62rem;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  color:var(--text-dim);
+  margin-bottom:.2rem;
+}
+.night-order-header h2 {
+  font-family:var(--font-serif);
+  font-size:1.15rem;
+  color:var(--accent);
+  margin:0;
+}
+.night-order-close {
+  width:28px;
+  height:28px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:var(--bg);
+  color:var(--text-muted);
+  cursor:pointer;
+}
+.night-order-close:hover { color:var(--accent); border-color:var(--border-accent); }
+.night-order-list {
+  max-height:calc(30vh - 4.6rem);
+  overflow-y:auto;
+  padding:.4rem 0;
+}
+.night-order-row {
+  display:flex;
+  align-items:flex-start;
+  gap:.6rem;
+  padding:.55rem .85rem;
+  border-bottom:1px solid rgba(101,63,31,.35);
+}
+.night-order-row:last-child { border-bottom:none; }
+.night-order-row.system-row { background:rgba(196,136,42,.035); }
+.night-order-num {
+  width:24px;
+  height:24px;
+  border-radius:50%;
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--bg);
+  border:1px solid var(--border);
+  color:var(--text-muted);
+  font-size:.72rem;
+  font-weight:700;
+  margin-top:2px;
+}
+.night-order-token {
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  border:1.5px solid var(--team-color,var(--border-accent));
+  background:var(--team-bg,rgba(196,136,42,.1));
+  overflow:hidden;
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--text-muted);
+  font-size:.7rem;
+}
+.night-order-token img { width:100%; height:100%; object-fit:cover; }
+.night-order-content { min-width:0; }
+.night-order-name { font-size:.86rem; font-weight:700; color:var(--text); margin-bottom:.18rem; }
+.night-order-name.system-label { font-size:.7rem; letter-spacing:.08em; color:var(--accent); }
+.night-order-reminder { font-size:.75rem; line-height:1.35; color:var(--text-muted); }
+.night-order-empty { color:var(--text-dim); font-size:.8rem; padding:1rem; text-align:center; }
+.grimoire-circle { order:1; flex:1; min-height:0; width:100%; position:relative; }
 .tokens-ring { width:100%; height:100%; position:relative; }
-.circle-token { width:80px; height:80px; border-radius:50%; border:2px solid var(--team-color,var(--border-accent)); background:var(--team-bg,rgba(196,136,42,.1)); overflow:visible; cursor:pointer; transition:transform .2s,box-shadow .2s; display:flex; align-items:center; justify-content:center; }
+.circle-token { width:80px; height:80px; border-radius:50%; border:2px solid var(--team-color,var(--border-accent)); background:var(--team-bg,rgba(196,136,42,.1)); overflow:visible; cursor:grab; transition:transform .2s,box-shadow .2s; display:flex; align-items:center; justify-content:center; touch-action:none; user-select:none; }
 .circle-token > img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
 .circle-token:hover { transform:scale(1.12); box-shadow:0 0 16px rgba(196,136,42,.5); z-index:10; }
+.circle-token.dragging { cursor:grabbing; transform:scale(1.12); box-shadow:0 0 20px rgba(196,136,42,.65); z-index:20; }
 .circle-token.dead { filter:grayscale(.8) brightness(.45); border-color:#3a2020; }
+.night-order-marker {
+  position:absolute;
+  top:-9px;
+  right:-9px;
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:5;
+  background:radial-gradient(circle at 35% 30%, #f8e9b5, #b77923 68%, #5d310b 100%);
+  border:2px solid #2b1605;
+  box-shadow:0 2px 8px rgba(0,0,0,.7), inset 0 1px 3px rgba(255,245,190,.75);
+  color:#130a03;
+  font-family:var(--font-serif);
+  font-size:.92rem;
+  font-weight:800;
+  pointer-events:none;
+}
 .dead-shroud { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:1.4rem; color:#c04040; pointer-events:none; z-index:2; text-shadow:0 0 6px rgba(0,0,0,.8); }
+.token-status-tags {
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  align-items:center;
+  pointer-events:none;
+  z-index:3;
+}
+.token-status {
+  padding:1px 5px;
+  border-radius:99px;
+  background:rgba(10,5,5,.82);
+  border:1px solid currentColor;
+  font-size:.5rem;
+  line-height:1.2;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.03em;
+  white-space:nowrap;
+}
+.token-status.poisoned { color:#7be06d; }
+.token-status.drunk { color:#b085ff; }
 .token-placeholder { font-size:1.2rem; color:var(--text-muted); font-weight:bold; }
 .token-label { position:absolute; bottom:calc(100% + 4px); left:50%; transform:translateX(-50%); font-size:.65rem; color:var(--text-muted); white-space:nowrap; background:rgba(10,5,5,.85); padding:1px 4px; border-radius:3px; pointer-events:none; }
 .token-char-name { position:absolute; top:calc(100% + 4px); left:50%; transform:translateX(-50%); font-size:.62rem; color:var(--accent); white-space:nowrap; background:rgba(10,5,5,.85); padding:1px 4px; border-radius:3px; pointer-events:none; }
+.has-power-tooltip { position:relative; }
+.has-power-tooltip::after {
+  content:attr(data-power);
+  position:absolute;
+  left:50%;
+  bottom:calc(100% + 14px);
+  transform:translateX(-50%) translateY(4px);
+  width:min(270px,78vw);
+  padding:.55rem .65rem;
+  border-radius:6px;
+  border:1px solid var(--border-accent);
+  background:rgba(12,7,6,.96);
+  color:var(--text);
+  box-shadow:0 10px 30px rgba(0,0,0,.45);
+  font-size:.75rem;
+  line-height:1.35;
+  text-align:left;
+  white-space:normal;
+  pointer-events:none;
+  opacity:0;
+  visibility:hidden;
+  z-index:60;
+  transition:opacity .12s ease,transform .12s ease,visibility .12s ease;
+}
+.has-power-tooltip::before {
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:calc(100% + 8px);
+  transform:translateX(-50%) translateY(4px);
+  border:6px solid transparent;
+  border-top-color:var(--border-accent);
+  pointer-events:none;
+  opacity:0;
+  visibility:hidden;
+  z-index:61;
+  transition:opacity .12s ease,transform .12s ease,visibility .12s ease;
+}
+.has-power-tooltip:hover::after,
+.has-power-tooltip:focus-visible::after,
+.has-power-tooltip:hover::before,
+.has-power-tooltip:focus-visible::before {
+  opacity:1;
+  visibility:visible;
+  transform:translateX(-50%) translateY(0);
+}
+.picker-char.has-power-tooltip::after,
+.picker-char.has-power-tooltip::before {
+  bottom:auto;
+  top:calc(100% + 8px);
+}
+.picker-char.has-power-tooltip::before {
+  top:calc(100% + 2px);
+  border-top-color:transparent;
+  border-bottom-color:var(--border-accent);
+}
 .modal-token { width:52px; height:52px; border-radius:50%; border:2px solid var(--team-color,var(--border-accent)); background:var(--team-bg,rgba(196,136,42,.1)); overflow:hidden; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:1.1rem; color:var(--text-muted); }
 .modal-token img { width:100%; height:100%; object-fit:cover; }
 .modal-actions { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; }
 .modal-action-btn { padding:.6rem .75rem; background:var(--bg-hover); border:1px solid var(--border); border-radius:var(--radius); color:var(--text-muted); font-size:.85rem; cursor:pointer; transition:all .15s; text-align:center; }
 .modal-action-btn:hover { color:var(--accent); border-color:var(--border-accent); }
+.modal-action-btn.active-status { color:var(--accent); border-color:var(--accent); background:rgba(196,136,42,.14); }
 .modal-action-btn.danger { color:var(--red-light); }
 .modal-action-btn.danger:hover { background:rgba(139,26,26,.2); border-color:var(--red); }
+.status-display { display:flex; flex-wrap:wrap; gap:.45rem; margin-top:1rem; }
+.status-tag { display:inline-flex; padding:.2rem .5rem; border-radius:99px; border:1px solid currentColor; font-size:.75rem; }
+.status-tag.poisoned { color:#7be06d; background:rgba(58,138,58,.12); }
+.status-tag.drunk { color:#b085ff; background:rgba(106,58,170,.16); }
 .reminder-tag { display:inline-block; padding:.2rem .5rem; background:rgba(196,136,42,.15); border:1px solid var(--border-accent); border-radius:4px; font-size:.75rem; color:var(--text-muted); cursor:pointer; }
 .reminder-tag:hover { color:var(--red-light); }
+.team-filter-bar { display:flex; flex-wrap:wrap; gap:.35rem; margin:0 0 .75rem; }
+.team-filter-btn { padding:.22rem .55rem; border-radius:99px; border:1px solid var(--border); background:var(--bg); color:var(--text-muted); font-size:.72rem; cursor:pointer; transition:all .15s; }
+.team-filter-btn:hover, .team-filter-btn.active { border-color:var(--team-color,var(--accent)); color:var(--team-color,var(--accent)); background:var(--team-bg,rgba(196,136,42,.12)); }
 .char-picker-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(78px,1fr)); gap:.5rem; max-height:400px; overflow-y:auto; }
 .picker-char { display:flex; flex-direction:column; align-items:center; gap:.3rem; padding:.5rem .3rem; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; transition:all .15s; font-size:.68rem; color:var(--text-muted); position:relative; }
 .picker-char:hover { border-color:var(--accent); color:var(--text); }

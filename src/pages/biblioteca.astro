@@ -19,10 +19,10 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
       <div class="filter-group">
         <span class="filter-label">Edició:</span>
         <button class="filter-btn active" data-ed="all">Tots</button>
-        <button class="filter-btn" data-ed="tb">🍺 Trouble Brewing</button>
-        <button class="filter-btn" data-ed="bmr">🌙 Bad Moon Rising</button>
-        <button class="filter-btn" data-ed="snv">🌹 Sects & Violets</button>
-        <button class="filter-btn" data-ed="other">📖 Experimental</button>
+        <button class="filter-btn" data-ed="tb">🍺 Problemes a la cerveseria</button>
+        <button class="filter-btn" data-ed="bmr">🌙 Lluna malèfica</button>
+        <button class="filter-btn" data-ed="snv">🌹 Sectes i violetes</button>
+        <button class="filter-btn" data-ed="other">📖 Experimentals</button>
         <button class="filter-btn lib-paisings-btn" data-ed="custom">🐉 Paisings</button>
       </div>
       <div class="filter-group">
@@ -55,10 +55,10 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   const HIDDEN_EDITIONS   = ['syyl', 'hdcs'];  // fan-made Chinese scripts, not shown
 
   const EDITION_LABELS = {
-    tb:     '🍺 Trouble Brewing',
-    bmr:    '🌙 Bad Moon Rising',
-    snv:    '🌹 Sects & Violets',
-    '':     '📖 Experimental',
+    tb:     '🍺 Problemes a la cerveseria',
+    bmr:    '🌙 Lluna malèfica',
+    snv:    '🌹 Sectes i violetes',
+    '':     '📖 Experimentals',
     syyl:   '🀄 中文 (SYYL)',
     hdcs:   '🀄 中文 (HDCS)',
     custom: '🐉 Paisings',
@@ -140,7 +140,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
 
     grid.innerHTML = chars.map(c => {
       const url        = imgUrl(c.id);
-      const edLabel    = EDITION_LABELS[c.edition] ?? c.edition;
+      const edLabel    = EDITION_LABELS[c.edition] ?? (c.edition || 'Experimentals');
       const teamLabel  = TEAM_LABELS[c.team] || c.team;
       const hasFirst   = c.firstNight > 0;
       const hasOther   = c.otherNight > 0;
@@ -157,7 +157,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
           <div class="lib-card-header">
             <div class="lib-token team-${c.team}">
               ${url
-                ? `<img src="${url}" alt="${nameEn}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" loading="lazy"/>
+                ? `<img src="${url}" alt="${nameCa}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" loading="lazy"/>
                    <span class="lib-token-fallback" style="display:none">${initial}</span>`
                 : `<span class="lib-token-fallback">${initial}</span>`
               }
@@ -171,7 +171,6 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
                   : ''
                 }
               </div>
-              <span class="lib-name-en">${nameEn}</span>
               <div class="lib-badges" style="margin-top:.3rem">
                 <span class="badge team-${c.team}">${teamLabel}</span>
                 <span class="lib-ed-badge">${edLabel}</span>
@@ -181,10 +180,6 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
           </div>
           <div class="lib-ability-row">
             <p class="lib-ability">${abilityCa ? `"${abilityCa}"` : '—'}</p>
-            ${abilityEn
-              ? `<button class="lib-lang-btn" data-lang="ca" title="Mostra en anglès">EN</button>`
-              : ''
-            }
           </div>
           ${hasFirst || hasOther ? `
             <div class="lib-night-flags">
@@ -201,32 +196,6 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
       `;
     }).join('');
   }
-
-  // Language toggle (event delegation on grid)
-  grid.addEventListener('click', e => {
-    const btn = e.target.closest('.lib-lang-btn');
-    if (!btn) return;
-    const card = btn.closest('.lib-card');
-    const id   = card.dataset.charId;
-    const char = ALL_CHARS.find(c => c.id === id);
-    if (!char) return;
-    const p      = card.querySelector('.lib-ability');
-    const showingCa = btn.dataset.lang === 'ca';
-    if (showingCa) {
-      p.textContent  = char.ability ? `"${char.ability}"` : '—';
-      btn.dataset.lang = 'en';
-      btn.textContent  = 'CA';
-      btn.title        = 'Mostra en català';
-      btn.classList.add('active');
-    } else {
-      const abilityCa = ABILITIES_CA[id] || char.ability || '';
-      p.textContent  = abilityCa ? `"${abilityCa}"` : '—';
-      btn.dataset.lang = 'ca';
-      btn.textContent  = 'EN';
-      btn.title        = 'Mostra en anglès';
-      btn.classList.remove('active');
-    }
-  });
 
   // Edition filter
   document.querySelectorAll('[data-ed]').forEach(btn => {

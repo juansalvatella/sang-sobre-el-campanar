@@ -1,6 +1,6 @@
 /**
  * Traduccions catalanes de les habilitats dels personatges de Blood on the Clocktower.
- * Format: { [id]: 'Descripció de la habilitat en Català' }
+ * Format: { [id]: 'Descripció de l'habilitat en català' }
  */
 export const charAbilitiesCa: Record<string, string> = {
 
@@ -25,18 +25,18 @@ export const charAbilitiesCa: Record<string, string> = {
   recluse:      'Pots aparèixer com a dolent i com a Esbirro o Dimoni, fins i tot mort.',
   saint:        'Si mors per execució, el teu equip perd.',
   // Esbirros
-  poisoner:     'Cada nit, tria un jugador: queda enverrinat aquesta nit i el dia de demà.',
+  poisoner:     'Cada nit, tria un jugador: queda enverinat aquesta nit i el dia de demà.',
   spy:          'Cada nit, veus el Grimori. Pots aparèixer com a bo i com a Vilatà o Foraster, fins i tot mort.',
   scarletwoman: 'Si hi ha 5 o més jugadors vius i el Dimoni mor, et converteixes en el Dimoni. (Els Viatgers no compten.)',
   baron:        'Hi ha Forasters addicionals en joc. [+2 Forasters]',
   // Dimoni
-  imp:          'Cada nit*, tria un jugador: mor. Si et mates a tu mateix d\'aquesta manera, un Esbirro es converteix en l\'Imp.',
+  imp:          'Cada nit*, tria un jugador: mor. Si et mates a tu mateix d\'aquesta manera, un Esbirro es converteix en el Diablet.',
   // Viatgers
   bureaucrat:   'Cada nit, tria un jugador (no tu mateix): el seu vot compta com a 3 vots demà.',
   thief:        'Cada nit, tria un jugador (no tu mateix): el seu vot compta negativament demà.',
   gunslinger:   'Cada dia, després del primer recompte de vots, pots triar un jugador que hagi votat: mor.',
   scapegoat:    'Si s\'executa un jugador de la teva alineació, podries ser executat tu en el seu lloc.',
-  beggar:       'Has d\'usar una fitxa de vot per votar. Si un jugador mort et dóna la seva, saps la seva alineació. Estàs sobri i sa.',
+  beggar:       'Has d\'usar una fitxa de vot per votar. Si un jugador mort et dona la seva, saps la seva alineació. Estàs sobri i sa.',
 
   // === BAD MOON RISING ===
   // Vilatans
@@ -65,7 +65,7 @@ export const charAbilitiesCa: Record<string, string> = {
   mastermind:     'Si el Dimoni mor per execució (acabant la partida), juguen 1 dia més. Si s\'executa un jugador, el seu equip perd.',
   // Dimonis
   zombuul:        'Cada nit*, si ningú ha mort avui, tria un jugador: mor. La 1a vegada que mors, continues viu però apareixies com a mort.',
-  pukka:          'Cada nit, tria un jugador: queda enverrinat. El jugador enverrinat anteriorment mor i es recupera.',
+  pukka:          'Cada nit, tria un jugador: queda enverinat. El jugador enverinat anteriorment mor i es recupera.',
   shabaloth:      'Cada nit*, tria 2 jugadors: moren. Un jugador mort que hagis triat l\'última nit podria ser regurgitat.',
   po:             'Cada nit*, pots triar un jugador: mor. Si l\'última vegada no en vas triar cap, tria 3 jugadors aquesta nit.',
   // Viatgers
@@ -79,7 +79,7 @@ export const charAbilitiesCa: Record<string, string> = {
   // Vilatans
   clockmaker:   'Comences sabent quants passos separen el Dimoni del seu Esbirro més proper.',
   dreamer:      'Cada nit, tria un jugador (no tu mateix ni Viatgers): saps 1 personatge bo i 1 de dolent, 1 dels quals és correcte.',
-  snakecharmer: 'Cada nit, tria un jugador viu: un Dimoni triat intercanvia personatge i alineació amb tu i queda enverrinat.',
+  snakecharmer: 'Cada nit, tria un jugador viu: un Dimoni triat intercanvia personatge i alineació amb tu i queda enverinat.',
   mathematician:'Cada nit, saps quantes habilitats de jugadors han funcionat de forma anormal (des de l\'alba) a causa de l\'habilitat d\'un altre personatge.',
   flowergirl:   'Cada nit*, saps si un Dimoni ha votat avui.',
   towncrier:    'Cada nit*, saps si un Esbirro ha nominat avui.',
@@ -133,8 +133,8 @@ export const charAbilitiesCa: Record<string, string> = {
   choirboy:       'Si el Dimoni mata el Rei, saps quin jugador és el Dimoni. [+el Rei]',
   poppygrower:    'Els Esbirros i Dimonis no se saben els uns als altres. Si mors, aquesta nit s\'assabenten de qui és cadascú.',
   atheist:        'El Narrador pot trencar les regles del joc, i si és executat, guanya el bé, fins i tot si ets mort. [Sense personatges dolents]',
-  cannibal:       'Tens l\'habilitat de l\'últim executat mort. Si era dolent, estàs enverrinat fins que un jugador bo mori per execució.',
-  acrobat:        'Cada nit*, tria un jugador: si és o es torna borratxo o enverrinat aquesta nit, mors.',
+  cannibal:       'Tens l\'habilitat de l\'últim executat mort. Si era dolent, estàs enverinat fins que un jugador bo mori per execució.',
+  acrobat:        'Cada nit*, tria un jugador: si és o es torna borratxo o enverinat aquesta nit, mors.',
   nightwatchman:  'Un cop per partida, a la nit, tria un jugador: sap que ets el Sereno.',
   knight:         'Comences sabent 2 jugadors que no són el Dimoni.',
   steward:        'Comences sabent 1 jugador bo.',
@@ -145,7 +145,7 @@ export const charAbilitiesCa: Record<string, string> = {
   alsaahir:       'Cada dia, si endevines públicament quins jugadors són Esbirros i quins Dimonis, guanya el bé.',
   princess:       'El teu 1r dia, si has nominat i executat un jugador, el Dimoni no mata aquesta nit.',
   // Forasters
-  snitch:         'Cada Esbirro rep 3 faròls.',
+  snitch:         'Cada Esbirro rep 3 farols.',
   puzzlemaster:   '1 jugador està borratxo, fins i tot si mors. Si endevines (un cop) qui és, saps quin és el Dimoni; però si t\'equivoques, reps informació falsa.',
   heretic:        'Qui guanya, perd i qui perd, guanya, fins i tot si ets mort.',
   damsel:         'Tots els Esbirros saben que hi ha una Donzella en joc. Si un Esbirro t\'endevina públicament (un cop), el teu equip perd.',
@@ -153,11 +153,11 @@ export const charAbilitiesCa: Record<string, string> = {
   politician:     'Si ets el jugador més responsable de la derrota del teu equip, canvies d\'alineació i guanyes, fins i tot mort.',
   plaguedoctor:   'Quan mors, el Narrador guanya una habilitat d\'Esbirro.',
   hatter:         'Si has mort avui o aquesta nit, els jugadors Esbirro i Dimoni poden triar nous personatges Esbirro i Dimoni.',
-  ogre:           'La teva 1a nit, tria un jugador (no tu mateix): adoptes la seva alineació (no saps quina), fins i tot borratxo o enverrinat.',
+  ogre:           'La teva 1a nit, tria un jugador (no tu mateix): adoptes la seva alineació (no saps quina), fins i tot borratxo o enverinat.',
   zealot:         'Si hi ha 5 o més jugadors vius, has de votar totes les nominacions.',
   hermit:         'Tens totes les habilitats de Foraster. [-0 o -1 Foraster]',
   // Esbirros
-  widow:          'La teva 1a nit, mira el Grimori i tria un jugador: queda enverrinat. 1 jugador bo sap que hi ha una Vídua en joc.',
+  widow:          'La teva 1a nit, mira el Grimori i tria un jugador: queda enverinat. 1 jugador bo sap que hi ha una Vídua en joc.',
   fearmonger:     'Cada nit, tria un jugador: si el nomines i s\'executa, el seu equip perd. Tots saben si tries un jugador nou.',
   psychopath:     'Cada dia, abans de les nominacions, pots triar públicament un jugador: mor. Si t\'executen, només mors si perds al pedra, paper, tisores.',
   goblin:         'Si declares públicament ser el Gòblin quan et nominen i t\'executen aquell dia, el teu equip guanya.',
@@ -167,14 +167,14 @@ export const charAbilitiesCa: Record<string, string> = {
   organgrinder:   'Tots els jugadors mantenen els ulls tancats en votar i el recompte és secret. Cada nit, tria si estàs borratxo fins al capvespre.',
   vizier:         'Tots saben que ets el Visir. No pots morir durant el dia. Si els bons han votat, pots triar executar immediatament.',
   harpy:          'Cada nit, tria 2 jugadors: demà, el 1r jugador ha d\'estar "convençut" que el 2n és dolent, o un dels dos podria morir.',
-  summoner:       'Reps 3 faròls. La 3a nit, tria un jugador: es converteix en un Dimoni dolent a la teva elecció. [Sense Dimoni]',
-  boffin:         'El Dimoni (fins i tot borratxo o enverrinat) té l\'habilitat d\'un personatge bo que no és en joc. Tots dos ho sabeu.',
+  summoner:       'Reps 3 farols. La 3a nit, tria un jugador: es converteix en un Dimoni dolent a la teva elecció. [Sense Dimoni]',
+  boffin:         'El Dimoni (fins i tot borratxo o enverinat) té l\'habilitat d\'un personatge bo que no és en joc. Tots dos ho sabeu.',
   xaan:           'La nit X, tots els Vilatans estan enverinats fins al capvespre. [X Forasters]',
   wizard:         'Un cop per partida, pots fer un desig. Si es concedeix, podria tenir un preu i deixar una pista sobre la seva naturalesa.',
   wraith:         'Pots triar obrir els ulls a la nit. Et desperten quan ho fan altres jugadors dolents.',
   // Dimonis
   lilmonsta:      'Cada nit, els Esbirros trien qui cuida el Petit Monstre i "és el Dimoni". Cada nit*, un jugador podria morir. [+1 Esbirro]',
-  lleech:         'Cada nit*, tria un jugador: mor. Comences triant un jugador: queda enverrinat. Mors si i només si ell és mort.',
+  lleech:         'Cada nit*, tria un jugador: mor. Comences triant un jugador: queda enverinat. Mors si i només si ell és mort.',
   alhadikhia:     'Cada nit*, pots triar 3 jugadors (tots se n\'assabenten): cadascun tria en silenci viure o morir, però si tots viuen, tots moren.',
   legion:         'Cada nit*, un jugador podria morir. Les execucions fallen si només els dolents han votat. Apareixies com a Esbirro també. [La majoria de jugadors són Legió]',
   leviathan:      'Si s\'executa més d\'1 jugador bo, guanya el mal. Tots saben que ets en joc. Després del dia 5, guanya el mal.',
@@ -204,13 +204,13 @@ export const charAbilitiesCa: Record<string, string> = {
   ferryman:       'L\'últim dia, tots els jugadors morts recuperen la seva fitxa de vot.',
   // Lòrics
   stormcatcher:   'Nomena un personatge bo. Si és en joc, només pot morir per execució, però els jugadors dolents saben quin jugador és.',
-  bootlegger:     'Aquest script conté personatges o regles homebrew.',
+  bootlegger:     'Aquest guió conté personatges o regles casolanes.',
   gardener:       'El Narrador assigna el personatge d\'1 o més jugadors.',
   bigwig:         'Cada nominat tria un jugador: fins al vot, només ell pot parlar i ha d\'estar "convençut" que el nominat és bo, o podria morir.',
   godofug:        'Un barret Ug. Qui porta el barret ha de parlar d\'un so alhora però pot votar dues vegades. Si no ho fa, passa el barret.',
   hindu:          'Els primers 4 jugadors que moren ressusciten immediatament com a Viatgers de la mateixa alineació.',
   knaves:         'Hi ha 2 Narradors: un menteix i l\'altre diu la veritat. Un cop per partida, al capvespre, podrien canviar.',
-  pope:           'Hi ha personatges bons duplicats en joc. Podrien ser també faròls.',
+  pope:           'Hi ha personatges bons duplicats en joc. Podrien ser també farols.',
   tor:            'Els jugadors no saben el seu personatge ni alineació. Ho saben quan moren.',
   ventriloquist:  'Si un jugador està "convençut" de ser un personatge nou durant la seva nominació, podria no morir si és executat avui.',
   zenomancer:     'Un o més jugadors cada un té un objectiu. En assolir-lo, aquell jugador rep un fragment d\'informació veraç.',

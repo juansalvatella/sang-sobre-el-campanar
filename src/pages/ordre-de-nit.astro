@@ -17,7 +17,7 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     <div id="no-chars" class="empty-state" style="display:none">
       <div class="empty-state-icon">🌙</div>
       <p>No hi ha personatges actius.</p>
-      <a href="/" class="btn btn-primary" style="margin-top:1.5rem;text-decoration:none">Anar a Configuració</a>
+      <a href="/" class="btn btn-primary" style="margin-top:1.5rem;text-decoration:none">Anar a configuració</a>
     </div>
 
     <div id="night-columns" class="night-columns">
@@ -29,15 +29,15 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
           <div class="night-row system-row">
             <div class="night-row-num">—</div>
             <div class="night-row-content">
-              <div class="night-row-name system-label">SERVENTS</div>
-              <div class="night-row-reminder">El Narrador desperta els Servents i els mostra els altres Servents i qui és el Dimoni.</div>
+              <div class="night-row-name system-label">ESBIRROS</div>
+              <div class="night-row-reminder">El Narrador desperta els Esbirros i els mostra els altres Esbirros i qui és el Dimoni.</div>
             </div>
           </div>
           <div class="night-row system-row">
             <div class="night-row-num">—</div>
             <div class="night-row-content">
               <div class="night-row-name system-label">DIMONI</div>
-              <div class="night-row-reminder">El Narrador desperta el Dimoni i li mostra els seus Servents i 3 personatges que no estan en joc.</div>
+              <div class="night-row-reminder">El Narrador desperta el Dimoni i li mostra els seus Esbirros i 3 personatges que no estan en joc.</div>
             </div>
           </div>
         </div>
@@ -78,6 +78,9 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
   const ABILITIES_CA = JSON.parse(document.getElementById('char-abilities-ca-data').textContent);
   function getNameCa(id, nameEn)     { return NAMES_CA[id]     ?? nameEn; }
   function getAbilityCa(id, abilityEn) { return ABILITIES_CA[id] ?? abilityEn; }
+  function getNightReminderCa(char, reminder) {
+    return getAbilityCa(char.id, char.ability || reminder || '');
+  }
 
   let ALL_CHARS = [];
   try {
@@ -108,11 +111,11 @@ const charAbilitiesCaJson = JSON.stringify(charAbilitiesCa);
     return `<div class="night-row team-${char.team} fade-in">
       <div class="night-row-num">${n}</div>
       <div class="night-row-token team-${char.team}">
-        ${url ? `<img src="${url}" alt="${char.name}" onerror="this.style.display='none'" loading="lazy"/>` : `<span style="font-size:.7rem">${getNameCa(char.id, char.name)[0]}</span>`}
+        ${url ? `<img src="${url}" alt="${getNameCa(char.id, char.name)}" onerror="this.style.display='none'" loading="lazy"/>` : `<span style="font-size:.7rem">${getNameCa(char.id, char.name)[0]}</span>`}
       </div>
       <div class="night-row-content">
         <div class="night-row-name">${getNameCa(char.id, char.name)}</div>
-        <div class="night-row-reminder">${reminder||'—'}</div>
+        <div class="night-row-reminder">${getNightReminderCa(char, reminder)||'—'}</div>
       </div>
     </div>`;
   }
